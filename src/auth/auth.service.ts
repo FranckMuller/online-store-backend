@@ -4,6 +4,7 @@ import {
   ConflictException,
   NotFoundException,
   ForbiddenException,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
@@ -61,6 +62,7 @@ export class AuthService {
           id: user.id,
           username: user.username,
           email: user.email,
+          roles: user.roles,
         },
         accessToken,
       };
@@ -97,12 +99,16 @@ export class AuthService {
         id: user.id,
         username: user.username,
         email: user.email,
+        roles: user.roles,
       },
       accessToken,
     };
   }
 
-  signout(res) {
+  async signout(res, userId) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new ForbiddenException();
+    await this.usersService.updateRefreshToken(userId, null);
     res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
   }
 
@@ -123,6 +129,8 @@ export class AuthService {
       throw new ForbiddenException();
     }
   }
+
+  async checkAuth(req) {}
 
   private async generateTokens(userId: string, username: string) {
     const [accessToken, refreshToken] = await Promise.all([

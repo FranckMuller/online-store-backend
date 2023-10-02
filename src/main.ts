@@ -18,6 +18,7 @@ async function bootstrap() {
     .setTitle("Amazon 2.0")
     .setDescription("The amazon API description")
     .setVersion("1.0")
+    .addBearerAuth()
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

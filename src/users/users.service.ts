@@ -12,9 +12,11 @@ export class UsersService {
   // TODO check if user already exist
   async create(createUserDto: CreateUserDto) {
     // new userModel .save()
-    const user = new this.userModel(createUserDto);
+    const user = new this.userModel({
+      ...createUserDto,
+      roles: ["user"],
+    });
     await user.save();
-    console.log(user);
     return user;
   }
 
@@ -29,10 +31,9 @@ export class UsersService {
   }
 
   async findOne(filter) {
-    console.log(filter);
     const user = await this.userModel.findOne({
       $or: [
-      {_id: {$eq: filter.id}},
+        { _id: { $eq: filter.id } },
         { username: { $eq: filter.username } },
         { email: { $eq: filter.email } },
       ],
