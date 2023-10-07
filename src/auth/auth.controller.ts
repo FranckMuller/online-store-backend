@@ -11,6 +11,7 @@ import {
   Res,
   Req,
   UseGuards,
+  Headers,
 } from "@nestjs/common";
 import type { Response, Request } from "express";
 import {
@@ -63,9 +64,9 @@ export class AuthController {
 
   @UseGuards(AccessTokenGuard)
   @Get("check")
-  checkAuth(@Req() req: Request) {
+  checkAuth(@Headers("authorization") authHeader: string) {
     console.log("check auth");
-    return this.authService.checkAuth(req);
+    return this.authService.checkAuth(authHeader);
   }
 
   @ApiOkResponse({ type: RefreshTokenResponse })

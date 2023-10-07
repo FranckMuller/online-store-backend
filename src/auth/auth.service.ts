@@ -11,6 +11,13 @@ import { ConfigService } from "@nestjs/config";
 import { CreateUserDto } from "../users/dto/create-user.dto";
 import { UsersService } from "../users/users.service";
 
+interface IDecodedToken {
+  userId: string;
+  username: string;
+  iat: number;
+  exp: number;
+}
+
 const cookieConfig = {
   httpOnly: true,
   secure: true,
@@ -130,7 +137,22 @@ export class AuthService {
     }
   }
 
-  async checkAuth(req) {}
+  async checkAuth(authHeader: string) {
+    const token = authHeader.split(" ")[1];
+    const decoded = this.jwtService.decode(token) as IDecodedToken;
+    console.log(decoded);
+    const user = await this.usersService.findById(decoded.userId);
+    if (!user) throw new UnauthorizedException();
+
+    return {
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        roles: user.roles,
+      },
+    };
+  }
 
   private async generateTokens(userId: string, username: string) {
     const [accessToken, refreshToken] = await Promise.all([
