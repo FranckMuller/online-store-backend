@@ -44,7 +44,7 @@ export class ProductsService {
   }
 
   async findAll() {
-    const products = await this.productModel.find({});
+    const products = await this.productModel.find({published: true});
     console.log(products);
     return products;
   }

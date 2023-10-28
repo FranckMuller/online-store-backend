@@ -18,6 +18,9 @@ export class Product {
   @Prop({ required: true })
   price: number;
 
+  @Prop({ required: true, default: true })
+  published: boolean;
+
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
   owner: User;
 }
