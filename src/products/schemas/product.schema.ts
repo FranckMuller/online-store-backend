@@ -18,8 +18,8 @@ export class Product {
   @Prop({ required: true })
   price: number;
 
-  // @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
-  // owner: User;
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
+  owner: User;
 }
 
 const ProductSchema = SchemaFactory.createForClass(Product);

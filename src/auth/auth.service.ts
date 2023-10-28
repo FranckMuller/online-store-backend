@@ -35,7 +35,6 @@ export class AuthService {
 
   async signup(createUserDto, res) {
     const userExist = await this.usersService.findOne(createUserDto);
-
     if (userExist) {
       throw new ConflictException(
         "user with this email or username already exist"
@@ -70,6 +69,7 @@ export class AuthService {
           username: user.username,
           email: user.email,
           roles: user.roles,
+          avatarMini: user.avatarMini,
         },
         accessToken,
       };
@@ -102,32 +102,43 @@ export class AuthService {
     res.cookie("jwt", refreshToken, cookieConfig);
 
     return {
+      accessToken,
       user: {
         id: user.id,
         username: user.username,
         email: user.email,
         roles: user.roles,
+        avatarMini: user.avatarMini,
       },
-      accessToken,
     };
   }
 
   async signout(res, userId) {
     const user = await this.usersService.findById(userId);
-    if (!user) throw new ForbiddenException();
+    if (!user) throw new UnauthorizedException();
     await this.usersService.updateRefreshToken(userId, null);
     res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
+    return { message: "cookies was cleared" };
   }
 
-  async refreshToken(userId, req) {
+  async refreshToken(req) {
+    console.log("REFRESH");
     if (req.cookies.jwt) {
-      const user = await this.usersService.findOne({ id: userId });
+      const decoded = this.jwtService.verify(req.cookies.jwt, {
+        secret: process.env.JWT_REFRESH_SECRET,
+      });
+
+      // console.log(decoced);
+      // console.log(process.env.JWT_REFRESH_SECRET);
+
+      const user = await this.usersService.findOne({ id: decoded.userId });
       if (!user) throw new ForbiddenException();
 
       const matchToken = await bcrypt.compare(
         req.cookies.jwt,
         user.refreshToken
       );
+
       if (!matchToken) throw new ForbiddenException();
 
       const { accessToken } = await this.generateTokens(user.id, user.username);
@@ -140,7 +151,7 @@ export class AuthService {
   async checkAuth(authHeader: string) {
     const token = authHeader.split(" ")[1];
     const decoded = this.jwtService.decode(token) as IDecodedToken;
-    console.log(decoded);
+
     const user = await this.usersService.findById(decoded.userId);
     if (!user) throw new UnauthorizedException();
 
@@ -150,6 +161,7 @@ export class AuthService {
         username: user.username,
         email: user.email,
         roles: user.roles,
+        avatarMini: user.avatarMini,
       },
     };
   }
@@ -163,7 +175,7 @@ export class AuthService {
         },
         {
           secret: process.env.JWT_ACCESS_SECRET,
-          expiresIn: "7d",
+          expiresIn: "1d",
         }
       ),
 

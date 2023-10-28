@@ -11,12 +11,16 @@ export class UsersService {
 
   // TODO check if user already exist
   async create(createUserDto: CreateUserDto) {
-    // new userModel .save()
+    // new userModel.save()
     const user = new this.userModel({
       ...createUserDto,
-      roles: ["user"],
+      roles: ["user", "admin"],
     });
+
+    console.log(user);
+
     await user.save();
+
     return user;
   }
 
@@ -26,7 +30,7 @@ export class UsersService {
     return users;
   }
 
-  async findById(id) {
+  async findById(id: string) {
     return await this.userModel.findById(id);
   }
 
@@ -39,6 +43,12 @@ export class UsersService {
       ],
     });
 
+    return user;
+  }
+
+  async getMyProducts(userId: string) {
+    console.log(userId);
+    const user = this.userModel.findById(userId).populate("products");
     return user;
   }
 
@@ -55,6 +65,7 @@ export class UsersService {
   }
 
   async updateRefreshToken(userId, refreshToken) {
+    console.log(refreshToken);
     const user = await this.findById(userId);
     user.refreshToken = refreshToken;
     await user.save();

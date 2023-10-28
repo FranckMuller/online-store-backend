@@ -9,31 +9,46 @@ import { Express } from "express";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { Product } from "./schemas/product.schema";
+import { UsersService } from "../users/users.service";
 
 @Injectable()
 export class ProductsService {
   constructor(
-    @InjectModel(Product.name) private productModel: Model<Product>
+    @InjectModel(Product.name) private productModel: Model<Product>,
+    private readonly usersService: UsersService
   ) {}
 
+  // TODO refactoring with additional update method of UsersService
   async create(
     createProductDto: CreateProductDto,
-    images: Array<Express.Multer.File>
+    images: Array<Express.Multer.File>,
+    userId: string
   ) {
+    const user = await this.usersService.findById(userId);
     const productData = {
       ...createProductDto,
       images: images.map((image) => image.path),
+      owner: user.id,
     };
     const product = await this.productModel.create(productData);
+    user.products.push(product.id);
     console.log(product);
+    const updatedUser = await user.save();
     return product;
+  }
+
+  async getMyProducts(userId: string) {
+    const products = await this.productModel.find({ owner: userId });
+    console.log(products);
+    return products;
   }
 
   async findAll() {
     const products = await this.productModel.find({});
-    console.log(products)
+    console.log(products);
     return products;
   }
+  
 
   async findOneById(id: string) {
     try {

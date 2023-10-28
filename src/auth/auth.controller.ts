@@ -27,7 +27,7 @@ import { AuthResponse, RefreshTokenResponse } from "./types";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 
 // HttpStatus
-
+// TODO auth by documentation jwt passport strategies
 @ApiBearerAuth()
 @Controller("auth")
 @ApiTags("auth")
@@ -53,7 +53,7 @@ export class AuthController {
   }
 
   @UseGuards(AccessTokenGuard)
-  @HttpCode(204)
+  @HttpCode(200)
   @Post("signout/:userId")
   signout(
     @Res({ passthrough: true }) res: Response,
@@ -65,13 +65,12 @@ export class AuthController {
   @UseGuards(AccessTokenGuard)
   @Get("check")
   checkAuth(@Headers("authorization") authHeader: string) {
-    console.log("check auth");
     return this.authService.checkAuth(authHeader);
   }
 
   @ApiOkResponse({ type: RefreshTokenResponse })
-  @Get("refresh/:userId")
-  refreshToken(@Param("userId") userId: string, @Req() req: Request) {
-    return this.authService.refreshToken(userId, req);
+  @Get("refresh")
+  refreshToken( @Req() req: Request) {
+    return this.authService.refreshToken( req);
   }
 }

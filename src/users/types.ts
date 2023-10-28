@@ -10,3 +10,8 @@ export class UsersResponse {
   @ApiProperty({ example: "admin@gmail.com" })
   email: string;
 }
+
+export class ProductsResponse {
+  @ApiProperty({example: '1234'})
+  id: string
+}

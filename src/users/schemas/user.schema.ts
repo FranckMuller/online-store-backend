@@ -1,3 +1,4 @@
+require("dotenv").config();
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import { Product } from "../../products/schemas/product.schema";
@@ -19,14 +20,25 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ type: Array<string> })
-  roles: {
-    type: string[];
-    default: ['admin', 'user'];
-  };
+  @Prop({ type: Array<string>, required: true, default: ["user"] })
+  roles: string[];
 
   @Prop()
   refreshToken: string;
+
+  @Prop({
+    type: String,
+    required: true,
+    default: `${process.env.APP_URL}/uploads/avatar.png`,
+  })
+  avatar: string;
+
+  @Prop({
+    type: String,
+    required: true,
+    default: `${process.env.APP_URL}/uploads/avatar-mini.png`,
+  })
+  avatarMini: string;
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }] })
   products: Product[];

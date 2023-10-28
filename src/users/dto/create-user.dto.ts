@@ -13,4 +13,7 @@ export class CreateUserDto {
   @ApiProperty({ example: "admin" })
   @IsNotEmpty()
   password: string;
+
+  avatar?: string;
+  avatarMini?: string
 }
