@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -32,23 +33,19 @@ export class ProductsService {
     };
     const product = await this.productModel.create(productData);
     user.products.push(product.id);
-    console.log(product);
     const updatedUser = await user.save();
     return product;
   }
 
   async getMyProducts(userId: string) {
     const products = await this.productModel.find({ owner: userId });
-    console.log(products);
     return products;
   }
 
   async findAll() {
-    const products = await this.productModel.find({published: true});
-    console.log(products);
+    const products = await this.productModel.find({ published: true });
     return products;
   }
-  
 
   async findOneById(id: string) {
     try {
@@ -75,8 +72,14 @@ export class ProductsService {
     }
   }
 
-  async deleteOneById(id: string) {
-    const result = await this.productModel.findByIdAndDelete(id);
-    return result;
+  // TODO refactoring check if product owner
+  async deleteOneById(id: string, userId) {
+    const product = await this.productModel.findById(id);
+    if (userId === product.owner.toString()) {
+      const result = await this.productModel.findByIdAndDelete(id);
+      return result;
+    } else {
+      throw new ForbiddenException();
+    }
   }
 }

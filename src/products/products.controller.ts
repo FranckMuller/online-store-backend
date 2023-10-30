@@ -14,7 +14,13 @@ import {
   UseGuards,
   Request,
 } from "@nestjs/common";
-import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth, ApiOkResponse } from "@nestjs/swagger";
+import {
+  ApiTags,
+  ApiConsumes,
+  ApiBody,
+  ApiBearerAuth,
+  ApiOkResponse,
+} from "@nestjs/swagger";
 import { FilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import { Express } from "express";
 import { diskStorage } from "multer";
@@ -75,8 +81,9 @@ export class ProductsController {
     return this.productsService.update(id, updateProductDto);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Delete(":id")
-  deleteOneById(@Param("id") id: string) {
-    return this.productsService.deleteOneById(id);
+  deleteOneById(@Param("id") id: string, @UseUser() user: IAccessTokenPayload) {  
+    return this.productsService.deleteOneById(id, user.userId);
   }
 }
