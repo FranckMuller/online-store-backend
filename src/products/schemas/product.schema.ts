@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import { User } from "../../users/schemas/user.schema";
+import { Image } from "../../images/schemas/image.schema";
 
 export type ProductDocument = HydratedDocument<Product>;
 
@@ -12,9 +13,6 @@ export class Product {
   @Prop({ required: true, unique: false })
   description: string;
 
-  @Prop([String])
-  images: string[];
-
   @Prop({ required: true })
   price: number;
 
@@ -23,6 +21,12 @@ export class Product {
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
   owner: User;
+
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }] })
+  images: Image[];
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Image" })
+  mainImage: string;
 }
 
 const ProductSchema = SchemaFactory.createForClass(Product);
@@ -33,6 +37,11 @@ ProductSchema.virtual("id").get(function () {
 
 ProductSchema.set("toJSON", {
   virtuals: true,
+  transform: (doc, ret, options) => {
+    delete ret.__v;
+    ret.id = ret._id.toString();
+    delete ret._id;
+  },
 });
 
 export { ProductSchema };

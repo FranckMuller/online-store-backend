@@ -21,7 +21,11 @@ import {
   ApiBearerAuth,
   ApiOkResponse,
 } from "@nestjs/swagger";
-import { FilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
+import {
+  FilesInterceptor,
+  FileInterceptor,
+  FileFieldsInterceptor,
+} from "@nestjs/platform-express";
 import { Express } from "express";
 import { diskStorage } from "multer";
 import { ProductsService } from "./products.service";
@@ -41,7 +45,7 @@ interface IAccessTokenPayload {
 @ApiTags("products")
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
-
+  // TODO validate images
   @UseGuards(AccessTokenGuard)
   @Post()
   @ApiConsumes("multipart/form-data")
@@ -56,6 +60,37 @@ export class ProductsController {
     @UseUser() user: IAccessTokenPayload
   ) {
     return this.productsService.create(createProductDto, images, user.userId);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Patch(":productId")
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: "images", maxCount: 5 },
+        { name: "mainImage", maxCount: 1 },
+      ],
+      { storage: fileStorage }
+    )
+  )
+  update(
+    @Param("productId") productId: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @UploadedFiles()
+    files: {
+      images: Array<Express.Multer.File>;
+      mainImage: Express.Multer.File;
+    },
+    @UseUser() user
+  ) {
+    return this.productsService.update(
+      user.id,
+      productId,
+      updateProductDto,
+      files.images,
+      files.mainImage
+    );
   }
 
   @Get()
@@ -75,15 +110,9 @@ export class ProductsController {
     return this.productsService.findOneById(id);
   }
 
-  @Patch(":id")
-  @ApiConsumes("multipart/form-data")
-  update(@Param("id") id: string, @Body() updateProductDto: UpdateProductDto) {
-    return this.productsService.update(id, updateProductDto);
-  }
-
   @UseGuards(AccessTokenGuard)
   @Delete(":id")
-  deleteOneById(@Param("id") id: string, @UseUser() user: IAccessTokenPayload) {  
+  deleteOneById(@Param("id") id: string, @UseUser() user: IAccessTokenPayload) {
     return this.productsService.deleteOneById(id, user.userId);
   }
 }

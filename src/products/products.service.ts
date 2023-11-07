@@ -11,12 +11,47 @@ import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { Product } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
+import { ImagesService } from "../images/images.service";
+
+// TODO enum
+
+enum ProductFields {
+  _Id = "_id",
+  Id = "id",
+  Name = "name",
+  Description = "description",
+  Price = "price",
+  Images = "images",
+  MainImage = "mainImage",
+  Published = "published",
+}
+
+// const selectedMyProductsFields = `
+// ${ProductFields.Id}
+// ${ProductFields.Name}
+// ${ProductFields.Description}
+// ${ProductFields.Price}
+// ${ProductFields.Images}
+// ${ProductFields.MainImage}
+// ${ProductFields.Published}
+// -${ProductFields._Id}`;
+
+const selectedMyProductsFields = {
+  id: 1,
+  name: 1,
+  description: 1,
+  price: 1,
+  images: 1,
+  mainImage: 1,
+  published: 1,
+};
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly imagesService: ImagesService
   ) {}
 
   // TODO refactoring with additional update method of UsersService
@@ -28,28 +63,84 @@ export class ProductsService {
     const user = await this.usersService.findById(userId);
     const productData = {
       ...createProductDto,
-      images: images.map((image) => image.path),
       owner: user.id,
     };
     const product = await this.productModel.create(productData);
+
+    const loadedImages = await this.imagesService.create(images);
+
+    for (let i = 0; i < loadedImages.length; i++) {
+      product.images.push(loadedImages[i].id);
+    }
+
+    if (!createProductDto.mainImage) {
+      product.mainImage = loadedImages[0].id;
+    }
+
     user.products.push(product.id);
-    const updatedUser = await user.save();
+    await product.save();
+    await user.save();
+    return product;
+  }
+
+  // TODO catch error
+  async update(userId, productId, updateProductDto, images, mainImage) {
+    const user = await this.usersService.findById(userId);
+    const product = await this.productModel.findById(productId);
+    let loadedImages;
+
+    if (!updateProductDto.existImages) {
+      product.images = [];
+    }
+
+    if (images) {
+      loadedImages = await this.imagesService.create(images);
+      for (let i = 0; i < loadedImages.length; i++) {
+        product.images.push(loadedImages[i].id);
+      }
+    }
+
+    if (updateProductDto.mainImageId) {
+      product.mainImage = updateProductDto.mainImageId;
+    }
+
+    if (mainImage) {
+      const newMainImage = await this.imagesService.createOne(mainImage);
+      product.mainImage = newMainImage.id;
+    }
+
+    await product.save();
     return product;
   }
 
   async getMyProducts(userId: string) {
-    const products = await this.productModel.find({ owner: userId });
+    const products = await this.productModel
+      .find({ owner: userId })
+      .select("-images")
+      .populate({ path: "mainImage" })
+      .exec();
+
+    if (!products) {
+      throw new NotFoundException("products not found");
+    }
+
     return products;
   }
 
   async findAll() {
-    const products = await this.productModel.find({ published: true });
+    const products = await this.productModel
+      .find({ published: true })
+      .populate({path: 'mainImage'});
     return products;
   }
 
   async findOneById(id: string) {
     try {
-      const product = await this.productModel.findById(id);
+      const product = await this.productModel
+        .findById(id)
+        .select(selectedMyProductsFields)
+        .populate({ path: "images", select: "id path filename" })
+        .populate({ path: "mainImage", select: "id path filename" });
       if (product) {
         return product;
       } else {
@@ -57,17 +148,6 @@ export class ProductsService {
       }
     } catch (error) {
       console.log(error);
-      throw new BadRequestException("Something bad happend");
-    }
-  }
-
-  async update(id: string, updateProductDto: UpdateProductDto) {
-    try {
-      const product = await this.productModel.findByIdAndUpdate(id, {
-        ...updateProductDto,
-      });
-      return product;
-    } catch (error) {
       throw new BadRequestException("Something bad happend");
     }
   }

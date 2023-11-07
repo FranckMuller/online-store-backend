@@ -17,8 +17,6 @@ export class UsersService {
       roles: ["user", "admin"],
     });
 
-    console.log(user);
-
     await user.save();
 
     return user;
@@ -47,7 +45,6 @@ export class UsersService {
   }
 
   async getMyProducts(userId: string) {
-    console.log(userId);
     const user = this.userModel.findById(userId).populate("products");
     return user;
   }
@@ -65,7 +62,6 @@ export class UsersService {
   }
 
   async updateRefreshToken(userId, refreshToken) {
-    console.log(refreshToken);
     const user = await this.findById(userId);
     user.refreshToken = refreshToken;
     await user.save();

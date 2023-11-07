@@ -1,0 +1,5 @@
+1. send colection fields as needed for client (for example product with no '__v') [done]
+2. validate images
+3. refactoring createOne method of imagesService
+4. handle errors product create and update methods
+5. swagger for images and products

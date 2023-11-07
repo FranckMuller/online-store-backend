@@ -14,8 +14,6 @@ const normalizeFileName = (req, file, cb) => {
   cb(null, `${generateId()}.${fileExtName}`);
 };
 
-console.log(process.env.URL);
-
 export const fileStorage = diskStorage({
   // destination: function (req, file, cb) {
   //   console.log(cb);

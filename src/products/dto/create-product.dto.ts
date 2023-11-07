@@ -20,4 +20,5 @@ export class CreateProductDto {
     format: "binary",
   })
   images: string[];
+  mainImage: string
 }
