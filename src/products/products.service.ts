@@ -26,16 +26,6 @@ enum ProductFields {
   Published = "published",
 }
 
-// const selectedMyProductsFields = `
-// ${ProductFields.Id}
-// ${ProductFields.Name}
-// ${ProductFields.Description}
-// ${ProductFields.Price}
-// ${ProductFields.Images}
-// ${ProductFields.MainImage}
-// ${ProductFields.Published}
-// -${ProductFields._Id}`;
-
 const selectedMyProductsFields = {
   id: 1,
   name: 1,
@@ -85,16 +75,16 @@ export class ProductsService {
 
   // TODO catch error
   async update(userId, productId, updateProductDto, images, mainImage) {
-    const user = await this.usersService.findById(userId);
     const product = await this.productModel.findById(productId);
-    let loadedImages;
 
-    if (!updateProductDto.existImages) {
-      product.images = [];
+    if (!product) {
+      throw new NotFoundException("product not found");
     }
 
-    if (images) {
-      loadedImages = await this.imagesService.create(images);
+    const user = await this.usersService.findById(userId);
+
+    if (images && images.length) {
+     const loadedImages = await this.imagesService.create(images);
       for (let i = 0; i < loadedImages.length; i++) {
         product.images.push(loadedImages[i].id);
       }
@@ -104,10 +94,14 @@ export class ProductsService {
       product.mainImage = updateProductDto.mainImageId;
     }
 
-    if (mainImage) {
+    if (mainImage && mainImage.length) {
       const newMainImage = await this.imagesService.createOne(mainImage);
       product.mainImage = newMainImage.id;
     }
+
+    product.name = updateProductDto.name;
+    product.description = updateProductDto.description;
+    product.price = updateProductDto.price;
 
     await product.save();
     return product;
@@ -116,7 +110,7 @@ export class ProductsService {
   async getMyProducts(userId: string) {
     const products = await this.productModel
       .find({ owner: userId })
-      .select("-images")
+      .select(`-${ProductFields.Images}`)
       .populate({ path: "mainImage" })
       .exec();
 
@@ -130,7 +124,7 @@ export class ProductsService {
   async findAll() {
     const products = await this.productModel
       .find({ published: true })
-      .populate({path: 'mainImage'});
+      .populate({ path: "mainImage" });
     return products;
   }
 
