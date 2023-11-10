@@ -68,7 +68,7 @@ export class ProductsController {
   @UseInterceptors(
     FileFieldsInterceptor(
       [
-        { name: "images", maxCount: 5 },
+        { name: "image", maxCount: 5 },
         { name: "mainImage", maxCount: 1 },
       ],
       { storage: fileStorage }
@@ -79,7 +79,7 @@ export class ProductsController {
     @Body() updateProductDto: UpdateProductDto,
     @UploadedFiles()
     files: {
-      images: Array<Express.Multer.File>;
+      image: Array<Express.Multer.File>;
       mainImage: Express.Multer.File;
     },
     @UseUser() user
@@ -88,7 +88,7 @@ export class ProductsController {
       user.id,
       productId,
       updateProductDto,
-      files.images,
+      files.image,
       files.mainImage
     );
   }

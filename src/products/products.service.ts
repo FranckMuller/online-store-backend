@@ -76,7 +76,9 @@ export class ProductsService {
   // TODO catch error
   async update(userId, productId, updateProductDto, images, mainImage) {
     const product = await this.productModel.findById(productId);
-
+console.log(images)
+console.log(mainImage)
+console.log(updateProductDto.mainImageId)
     if (!product) {
       throw new NotFoundException("product not found");
     }
