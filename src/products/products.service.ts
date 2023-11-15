@@ -73,22 +73,34 @@ export class ProductsService {
     return product;
   }
 
-  // TODO catch error
+  // TODO catch error / fix bug with main image
   async update(userId, productId, updateProductDto, images, mainImage) {
     const product = await this.productModel.findById(productId);
-console.log(images)
-console.log(mainImage)
-console.log(updateProductDto.mainImageId)
+
     if (!product) {
       throw new NotFoundException("product not found");
     }
-
     const user = await this.usersService.findById(userId);
 
+    if (updateProductDto.deletingImagesIds) {
+      const ids = JSON.parse(updateProductDto.deletingImagesIds);
+      const deletingResult = await this.imagesService.deleteMany(ids);
+      const newImagesIds = product.images.filter((el) => {
+        if (!ids.includes(el.toString())) {
+          return true;
+        }
+      });
+      product.images = newImagesIds;
+    }
+
     if (images && images.length) {
-     const loadedImages = await this.imagesService.create(images);
+      const loadedImages = await this.imagesService.create(images);
       for (let i = 0; i < loadedImages.length; i++) {
-        product.images.push(loadedImages[i].id);
+        product.images.unshift(loadedImages[i].id);
+      }
+      console.log(product.images[0]);
+      if (!updateProductDto.mainImageId) {
+        product.mainImage = product.images[0];
       }
     }
 
@@ -96,14 +108,10 @@ console.log(updateProductDto.mainImageId)
       product.mainImage = updateProductDto.mainImageId;
     }
 
-    if (mainImage && mainImage.length) {
-      const newMainImage = await this.imagesService.createOne(mainImage);
-      product.mainImage = newMainImage.id;
-    }
-
     product.name = updateProductDto.name;
     product.description = updateProductDto.description;
     product.price = updateProductDto.price;
+    product.published = updateProductDto.published;
 
     await product.save();
     return product;
@@ -135,8 +143,8 @@ console.log(updateProductDto.mainImageId)
       const product = await this.productModel
         .findById(id)
         .select(selectedMyProductsFields)
-        .populate({ path: "images", select: "id path filename" })
-        .populate({ path: "mainImage", select: "id path filename" });
+        .populate({ path: "images", select: "id path" })
+        .populate({ path: "mainImage", select: "id path" });
       if (product) {
         return product;
       } else {

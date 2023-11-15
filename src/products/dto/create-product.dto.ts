@@ -21,4 +21,5 @@ export class CreateProductDto {
   })
   images: string[];
   mainImage: string
+  published: string
 }

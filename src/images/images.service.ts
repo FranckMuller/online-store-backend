@@ -4,6 +4,7 @@ import { Model } from "mongoose";
 import { Express } from "express";
 import { Image } from "./schemas/image.schema";
 
+
 @Injectable()
 export class ImagesService {
   constructor(@InjectModel(Image.name) private imageModel: Model<Image>) {}
@@ -27,6 +28,11 @@ export class ImagesService {
       path: `/${image[0].path}`,
     };
     const result = await this.imageModel.create(data);
+    return result;
+  }
+
+  async deleteMany(ids: Array<string>) {
+    const result = await this.imageModel.deleteMany({ _id: { $in: ids } });
     return result;
   }
 }

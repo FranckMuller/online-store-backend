@@ -23,7 +23,7 @@ export class Product {
   owner: User;
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }] })
-  images: Image[];
+  images: string[];
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Image" })
   mainImage: string;
