@@ -6,6 +6,7 @@ export class CreateCategoryDto {
   @ApiProperty({ example: "home" })
   name: string;
 
+
   @IsNotEmpty()
   @ApiProperty({
     example: {
