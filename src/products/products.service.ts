@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import mongoose, { Model } from "mongoose";
 import { Express } from "express";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
@@ -34,6 +34,7 @@ const selectedMyProductsFields = {
   images: 1,
   mainImage: 1,
   published: 1,
+  categories: 1,
 };
 
 @Injectable()
@@ -108,10 +109,15 @@ export class ProductsService {
       product.mainImage = updateProductDto.mainImageId;
     }
 
+    const newCategories = JSON.parse(updateProductDto.categories).map(
+      (id) => new mongoose.Types.ObjectId(id)
+    );
+
     product.name = updateProductDto.name;
     product.description = updateProductDto.description;
     product.price = updateProductDto.price;
     product.published = updateProductDto.published;
+    product.categories = newCategories;
 
     await product.save();
     return product;
@@ -144,7 +150,8 @@ export class ProductsService {
         .findById(id)
         .select(selectedMyProductsFields)
         .populate({ path: "images", select: "id path" })
-        .populate({ path: "mainImage", select: "id path" });
+        .populate({ path: "mainImage", select: "id path" })
+        .populate({ path: "categories" });
       if (product) {
         return product;
       } else {

@@ -16,7 +16,7 @@ export class Product {
   @Prop({ required: true })
   price: number;
 
-  @Prop({ required: true, default: true })
+  @Prop({ default: true })
   published: boolean;
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
@@ -27,6 +27,12 @@ export class Product {
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Image" })
   mainImage: string;
+
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
+    default: [],
+  })
+  categories: string[];
 }
 
 const ProductSchema = SchemaFactory.createForClass(Product);
