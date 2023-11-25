@@ -4,3 +4,4 @@
 4. handle errors product create and update methods
 5. swagger for images and products
 6. handle schema errors
+7. create checking if user is owner product during update product

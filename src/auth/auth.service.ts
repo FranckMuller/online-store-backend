@@ -48,10 +48,11 @@ export class AuthService {
         password: hashedPassword,
       };
       const createdUser = await this.usersService.create(data);
-
+      console.log(createdUser);
       const { accessToken, refreshToken } = await this.generateTokens(
         createdUser.id,
-        createdUser.username
+        createdUser.username,
+        createdUser.roles
       );
 
       const hashedRefreshToken = this.hashData(refreshToken);
@@ -80,7 +81,7 @@ export class AuthService {
 
   async signin(signinDto, res) {
     const user = await this.usersService.findOne(signinDto);
-
+    console.log(user);
     if (!user) throw new NotFoundException("user does not exists");
 
     const matchPassword = await bcrypt.compare(
@@ -93,7 +94,8 @@ export class AuthService {
 
     const { accessToken, refreshToken } = await this.generateTokens(
       user.id,
-      user.username
+      user.username,
+      user.roles
     );
 
     const hashedRefreshToken = this.hashData(refreshToken);
@@ -122,14 +124,10 @@ export class AuthService {
   }
 
   async refreshToken(req) {
-    console.log("REFRESH");
     if (req.cookies.jwt) {
       const decoded = this.jwtService.verify(req.cookies.jwt, {
         secret: process.env.JWT_REFRESH_SECRET,
       });
-
-      // console.log(decoced);
-      // console.log(process.env.JWT_REFRESH_SECRET);
 
       const user = await this.usersService.findOne({ id: decoded.userId });
       if (!user) throw new ForbiddenException();
@@ -141,7 +139,11 @@ export class AuthService {
 
       if (!matchToken) throw new ForbiddenException();
 
-      const { accessToken } = await this.generateTokens(user.id, user.username);
+      const { accessToken } = await this.generateTokens(
+        user.id,
+        user.username,
+        user.roles
+      );
       return { accessToken };
     } else {
       throw new ForbiddenException();
@@ -166,12 +168,17 @@ export class AuthService {
     };
   }
 
-  private async generateTokens(userId: string, username: string) {
+  private async generateTokens(
+    userId: string,
+    username: string,
+    roles: Array<string>
+  ) {
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         {
           userId,
           username,
+          roles,
         },
         {
           secret: process.env.JWT_ACCESS_SECRET,
