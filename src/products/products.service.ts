@@ -9,11 +9,17 @@ import mongoose, { Model } from "mongoose";
 import { Express } from "express";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
+import { EProductsSort } from "./dto/get-products.dto";
 import { Product } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
 import { ImagesService } from "../images/images.service";
 
 // TODO enum
+
+type TSortProducts = {
+  createdAt?: 1 | -1;
+  price?: 1 | -1;
+};
 
 enum ProductFields {
   _Id = "_id",
@@ -44,6 +50,60 @@ export class ProductsService {
     private readonly usersService: UsersService,
     private readonly imagesService: ImagesService
   ) {}
+  
+  async findAll(filters) {
+    let sort: TSortProducts = {};
+
+    if (filters.sort) {
+      switch (filters.sort) {
+        case EProductsSort.Newest:
+          sort.createdAt = 1;
+          break;
+        case EProductsSort.Oldest:
+          sort.createdAt = -1;
+          break;
+
+        case EProductsSort.HighPrice:
+          sort.price = -1;
+          break;
+
+        case EProductsSort.MinPrice:
+          sort.price = 1;
+          break;
+      }
+    }
+
+    const pipeline: mongoose.PipelineStage[] = [
+      { $match: {} },
+      {
+        $project: {
+          _id: 0,
+          name: 1,
+          price: 1,
+          description: 1,
+          categories: 1,
+          mainImage: 1,
+          createdAt: 1,
+          id: "$_id",
+        },
+      },
+      { $sort: sort },
+
+      {
+        $lookup: {
+          from: "images",
+          localField: "mainImage",
+          foreignField: "_id",
+          as: "mainImage",
+        },
+      },
+      { $unwind: "$mainImage" },
+    ];
+
+    const products = await this.productModel.aggregate(pipeline);
+
+    return products;
+  }
 
   // TODO refactoring with additional update method of UsersService
   async create(
@@ -134,13 +194,6 @@ export class ProductsService {
       throw new NotFoundException("products not found");
     }
 
-    return products;
-  }
-
-  async findAll() {
-    const products = await this.productModel
-      .find({ published: true })
-      .populate({ path: "mainImage" });
     return products;
   }
 

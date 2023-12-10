@@ -5,7 +5,7 @@ import { Image } from "../../images/schemas/image.schema";
 
 export type ProductDocument = HydratedDocument<Product>;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Product {
   @Prop({ required: true, unique: false })
   name: string;

@@ -6,6 +6,7 @@ import {
   Body,
   Patch,
   Param,
+  Query,
   Delete,
   ParseFilePipeBuilder,
   UploadedFile,
@@ -31,6 +32,7 @@ import { diskStorage } from "multer";
 import { ProductsService } from "./products.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
+import { GetProductsDto } from "./dto/get-products.dto";
 import { fileStorage } from "../files/storage";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 import { UseUser } from "../decorators/use-user.decorator";
@@ -94,8 +96,8 @@ export class ProductsController {
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  findAll(@Query() filters: GetProductsDto) {
+    return this.productsService.findAll(filters);
   }
 
   // TODO make a ApiOkResponse
