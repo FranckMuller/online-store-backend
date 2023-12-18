@@ -276,7 +276,6 @@ export class ProductsService {
     }
   }
 
-  // TODO refactoring check if product owner
   async deleteOneById(id: string, userId) {
     const product = await this.productModel.findById(id);
     if (userId === product.owner.toString()) {
