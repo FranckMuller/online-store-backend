@@ -107,6 +107,12 @@ export class ProductsController {
     return this.productsService.getMyProducts(user.userId);
   }
 
+  @UseGuards(AccessTokenGuard)
+  @Get("my/:id")
+  getMyById(@Param("id") id: string) {
+    return this.productsService.findOneById(id);
+  }
+
   @Get(":id")
   findOneById(@Param("id") id: string) {
     return this.productsService.findOneById(id);

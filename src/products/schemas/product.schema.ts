@@ -28,11 +28,8 @@ export class Product {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Image" })
   mainImage: string;
 
-  @Prop({
-    type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
-    default: [],
-  })
-  categories: string[];
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Category" })
+  category: string;
 }
 
 const ProductSchema = SchemaFactory.createForClass(Product);

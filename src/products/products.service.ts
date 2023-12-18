@@ -13,12 +13,18 @@ import { EProductsSort } from "./dto/get-products.dto";
 import { Product } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
 import { ImagesService } from "../images/images.service";
+import { CategoriesService } from "../categories/categories.service";
 
 // TODO enum
 
 type TSortProducts = {
   createdAt?: 1 | -1;
   price?: 1 | -1;
+};
+
+type TFilterProducts = {
+  minPrice?: number;
+  maxPrice?: number;
 };
 
 enum ProductFields {
@@ -48,46 +54,82 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     private readonly usersService: UsersService,
-    private readonly imagesService: ImagesService
+    private readonly imagesService: ImagesService,
+    private readonly categoriesService: CategoriesService
   ) {}
-  
+
   async findAll(filters) {
-    let sort: TSortProducts = {};
+    let $sort: TSortProducts = {
+      createdAt: 1,
+    };
+    let $match: any = {};
 
     if (filters.sort) {
       switch (filters.sort) {
         case EProductsSort.Newest:
-          sort.createdAt = 1;
+          $sort.createdAt = 1;
           break;
         case EProductsSort.Oldest:
-          sort.createdAt = -1;
+          $sort.createdAt = -1;
           break;
 
         case EProductsSort.HighPrice:
-          sort.price = -1;
+          delete $sort.createdAt;
+          $sort.price = -1;
           break;
 
         case EProductsSort.MinPrice:
-          sort.price = 1;
+          delete $sort.createdAt;
+          $sort.price = 1;
           break;
       }
     }
 
+    if (filters.minPrice && filters.maxPrice) {
+      $match = {
+        $and: [
+          {
+            price: {
+              $gte: Number(filters.minPrice),
+              $lte: Number(filters.maxPrice),
+            },
+          },
+        ],
+      };
+    }
+
+    if (filters.maxPrice && !filters.minPrice) {
+      $match.price = { $lte: Number(filters.maxPrice) };
+    }
+
+    if (filters.minPrice && !filters.maxPrice) {
+      $match.price = { $gte: Number(filters.minPrice) };
+    }
+
+    if (filters.category && filters.category !== 'all') {
+      const foundCategory = await this.getCategoryByName(filters.category);
+      $match.category = foundCategory._id;
+    }
+
     const pipeline: mongoose.PipelineStage[] = [
-      { $match: {} },
+      {
+        $match,
+      },
       {
         $project: {
           _id: 0,
           name: 1,
           price: 1,
           description: 1,
-          categories: 1,
           mainImage: 1,
           createdAt: 1,
+          category: 1,
           id: "$_id",
         },
       },
-      { $sort: sort },
+      {
+        $sort,
+      },
 
       {
         $lookup: {
@@ -97,7 +139,28 @@ export class ProductsService {
           as: "mainImage",
         },
       },
-      { $unwind: "$mainImage" },
+
+      {
+        $lookup: {
+          from: "categories",
+          localField: "category",
+          foreignField: "_id",
+          as: "category",
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$mainImage",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
     ];
 
     const products = await this.productModel.aggregate(pipeline);
@@ -159,7 +222,7 @@ export class ProductsService {
       for (let i = 0; i < loadedImages.length; i++) {
         product.images.unshift(loadedImages[i].id);
       }
-      console.log(product.images[0]);
+
       if (!updateProductDto.mainImageId) {
         product.mainImage = product.images[0];
       }
@@ -169,15 +232,12 @@ export class ProductsService {
       product.mainImage = updateProductDto.mainImageId;
     }
 
-    const newCategories = JSON.parse(updateProductDto.categories).map(
-      (id) => new mongoose.Types.ObjectId(id)
-    );
-
+    const newCategory = updateProductDto.category;
     product.name = updateProductDto.name;
     product.description = updateProductDto.description;
     product.price = updateProductDto.price;
     product.published = updateProductDto.published;
-    product.categories = newCategories;
+    product.category = newCategory;
 
     await product.save();
     return product;
@@ -204,7 +264,7 @@ export class ProductsService {
         .select(selectedMyProductsFields)
         .populate({ path: "images", select: "id path" })
         .populate({ path: "mainImage", select: "id path" })
-        .populate({ path: "categories" });
+        .populate({ path: "category" });
       if (product) {
         return product;
       } else {
@@ -225,5 +285,9 @@ export class ProductsService {
     } else {
       throw new ForbiddenException();
     }
+  }
+
+  private getCategoryByName(categoryName: string) {
+    return this.categoriesService.findByName(categoryName);
   }
 }
