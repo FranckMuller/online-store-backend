@@ -6,12 +6,13 @@ import { ProductsModule } from "./products/products.module";
 import { UsersModule } from "./users/users.module";
 import { FilesModule } from "./files/files.module";
 import { AuthModule } from "./auth/auth.module";
-import {ImagesModule} from './images/images.module'
-import {CategoriesModule} from './categories/categories.module'
+import { ImagesModule } from "./images/images.module";
+import { CategoriesModule } from "./categories/categories.module";
+import { ReviewsModule } from "./reviews/reviews.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({isGlobal: true,}),
+    ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRoot(process.env.DB_URL, {
       connectionFactory: (connection) => {
         connection.on("connected", () => {
@@ -26,7 +27,8 @@ import {CategoriesModule} from './categories/categories.module'
     ProductsModule,
     FilesModule,
     ImagesModule,
-    CategoriesModule
+    CategoriesModule,
+    ReviewsModule,
   ],
   controllers: [],
   providers: [],

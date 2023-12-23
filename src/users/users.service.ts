@@ -29,7 +29,13 @@ export class UsersService {
   }
 
   async findById(id: string) {
-    return await this.userModel.findById(id);
+    const user = await this.userModel.findById(id)
+    if(!user) {
+      throw new NotFoundException('User not found')
+      
+    }
+    
+    return user
   }
 
   async findOne(filter) {

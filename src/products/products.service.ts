@@ -106,7 +106,7 @@ export class ProductsService {
       $match.price = { $gte: Number(filters.minPrice) };
     }
 
-    if (filters.category && filters.category !== 'all') {
+    if (filters.category && filters.category !== "all") {
       const foundCategory = await this.getCategoryByName(filters.category);
       $match.category = foundCategory._id;
     }
@@ -258,21 +258,18 @@ export class ProductsService {
   }
 
   async findOneById(id: string) {
-    try {
-      const product = await this.productModel
-        .findById(id)
-        .select(selectedMyProductsFields)
-        .populate({ path: "images", select: "id path" })
-        .populate({ path: "mainImage", select: "id path" })
-        .populate({ path: "category" });
-      if (product) {
-        return product;
-      } else {
-        throw new NotFoundException("product not found");
-      }
-    } catch (error) {
-      console.log(error);
-      throw new BadRequestException("Something bad happend");
+    const product = await this.productModel
+      .findById(id)
+      .select(selectedMyProductsFields)
+      .populate({ path: "images", select: "id path" })
+      .populate({ path: "mainImage", select: "id path" })
+      .populate({ path: "category" })
+      .populate('review')
+      
+    if (product) {
+      return product;
+    } else {
+      throw new NotFoundException("product not found");
     }
   }
 

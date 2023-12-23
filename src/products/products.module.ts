@@ -12,9 +12,10 @@ import { CategoriesModule } from "../categories/categories.module";
     MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
     UsersModule,
     ImagesModule,
-    CategoriesModule
+    CategoriesModule,
   ],
   controllers: [ProductsController],
   providers: [ProductsService],
+  exports: [ProductsService],
 })
 export class ProductsModule {}
