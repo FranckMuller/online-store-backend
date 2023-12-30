@@ -13,10 +13,10 @@ export class Review {
   @Prop()
   text: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: User.name })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
   user: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Product' })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Product" })
   product: string;
 }
 

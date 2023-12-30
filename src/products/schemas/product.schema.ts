@@ -32,8 +32,8 @@ export class Product {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "Category" })
   category: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: Review.name })
-  review: string;
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: Review.name }] })
+  reviews: [string];
 }
 
 const ProductSchema = SchemaFactory.createForClass(Product);

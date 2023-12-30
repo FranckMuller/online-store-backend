@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import { MulterModule } from "@nestjs/platform-express";
 import { ConfigModule } from "@nestjs/config";
+import { ServeStaticModule } from "@nestjs/serve-static";
+import { join } from "path";
 import { ProductsModule } from "./products/products.module";
 import { UsersModule } from "./users/users.module";
 import { FilesModule } from "./files/files.module";
@@ -13,6 +15,10 @@ import { ReviewsModule } from "./reviews/reviews.module";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, "..", "uploads"),
+      serveRoot: '/uploads/'
+    }),
     MongooseModule.forRoot(process.env.DB_URL, {
       connectionFactory: (connection) => {
         connection.on("connected", () => {

@@ -1,4 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
 import { Review } from "./schemas/review.schema";
@@ -19,32 +23,60 @@ export class ReviewsService {
       .select({ product: 0 })
       .populate({ path: "user", select: "id username avatarMini" });
 
-    console.log(reviews);
     return reviews;
   }
 
   async create(productId, userId: string, createReviewDto) {
     const product = await this.productsService.findOneById(productId);
+    if (product) throw new NotFoundException("product not found");
+
     const user = await this.usersService.findById(userId);
-    const review = await this.reviewModel.create({
+    let review = await this.reviewModel.create({
       ...createReviewDto,
       user: user.id,
       product: product.id,
     });
-    product.review = review.id;
-    console.log(11111111);
+    product.reviews.push(review.id);
+    user.reviews.push(review.id);
 
     await product.save();
+    await user.save();
+
+    review = await review.populate({
+      path: "user",
+      select: "username avatarMini id",
+    });
+
     return review;
   }
 
   async getAllByProductId(productId) {
-    const reviews = await this.reviewModel.find({ product: productId });
+    const reviews = await this.reviewModel
+      .find({ product: productId })
+      .limit(3)
+      .sort({ createdAt: -1 })
+      .populate({ path: "user", select: "username avatarMini id" });
     return reviews;
   }
 
-  async deleteOneById(id) {
-    const result = await this.reviewModel.findByIdAndDelete(id);
-    return result;
+  async deleteOneById(id: string, userId: string) {
+    let review = await this.findOneById(id);
+
+    if (userId !== review.user) throw new ForbiddenException("forbidden");
+
+    // const result = await this.reviewModel.findByIdAndDelete(id);
+
+    review = review.remove();
+    console.log(1111111, review);
+    return {
+      id: review.id,
+    };
+    // return result;
+  }
+
+  async findOneById(id: string) {
+    const review = await this.reviewModel.findById(id);
+    if (!review) throw new NotFoundException("review not found");
+    return review;
   }
 }

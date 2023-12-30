@@ -33,18 +33,19 @@ export class ReviewsController {
   create(
     @Param("productId") productId: string,
     @UseUser() user: IUserPayload,
-    @Body() createReviewDto: CreateReviewDto,
+    @Body() createReviewDto: CreateReviewDto
   ) {
     return this.reviewsService.create(productId, user.userId, createReviewDto);
   }
 
-  @Get(":productId")  
+  @Get(":productId")
   getAllByProductId(@Param("productId") productId: string) {
     return this.reviewsService.getAllByProductId(productId);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Delete(":id")
-  deleteOneById(@Param("id") id: string) {
-    return this.reviewsService.deleteOneById(id);
+  deleteOneById(@Param("id") id: string, @UseUser() user: IUserPayload) {
+    return this.reviewsService.deleteOneById(id, user.userId);
   }
 }

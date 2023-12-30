@@ -14,6 +14,7 @@ import { Product } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
 import { ImagesService } from "../images/images.service";
 import { CategoriesService } from "../categories/categories.service";
+import { selectedProductsFields } from "./selected-fields";
 
 // TODO enum
 
@@ -36,6 +37,7 @@ enum ProductFields {
   Images = "images",
   MainImage = "mainImage",
   Published = "published",
+  Reviews = "reviews",
 }
 
 const selectedMyProductsFields = {
@@ -47,6 +49,7 @@ const selectedMyProductsFields = {
   mainImage: 1,
   published: 1,
   categories: 1,
+  reviews: 1,
 };
 
 @Injectable()
@@ -117,19 +120,20 @@ export class ProductsService {
       },
       {
         $project: {
-          _id: 0,
-          name: 1,
-          price: 1,
-          description: 1,
-          mainImage: 1,
-          createdAt: 1,
-          category: 1,
-          id: "$_id",
+          ...selectedProductsFields,
+          totalReviews: {
+            $cond: {
+              if: { $isArray: "$reviews" },
+              then: { $size: "$reviews" },
+              else: 0,
+            },
+          },
         },
       },
-      {
-        $sort,
-      },
+
+      // {
+      //   $addField: {reviewTotal}
+      // },
 
       {
         $lookup: {
@@ -161,6 +165,14 @@ export class ProductsService {
           preserveNullAndEmptyArrays: true,
         },
       },
+
+      {
+        $sort,
+      },
+
+      // {
+      //   $limit: 2,
+      // },
     ];
 
     const products = await this.productModel.aggregate(pipeline);
@@ -244,9 +256,11 @@ export class ProductsService {
   }
 
   async getMyProducts(userId: string) {
+    console.log(userId);
     const products = await this.productModel
       .find({ owner: userId })
-      .select(`-${ProductFields.Images}`)
+      // .select(`-${ProductFields.Images}`)
+      // .select(selectedProductsFields)
       .populate({ path: "mainImage" })
       .exec();
 
@@ -264,8 +278,20 @@ export class ProductsService {
       .populate({ path: "images", select: "id path" })
       .populate({ path: "mainImage", select: "id path" })
       .populate({ path: "category" })
-      .populate('review')
-      
+      // .populate({
+      //   path: "reviews",
+      //   populate: {
+      //     path: "user",
+      //     select: "username avatarMini id",
+      //   },
+      //   options: {
+      //     sort: {
+      //       createdAt: -1,
+      //     },
+      //     limit: 3,
+      //   },
+      // });
+
     if (product) {
       return product;
     } else {

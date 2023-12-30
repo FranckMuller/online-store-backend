@@ -2,6 +2,7 @@ require("dotenv").config();
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { HydratedDocument } from "mongoose";
 import { Product } from "../../products/schemas/product.schema";
+import { Review } from "../../reviews/schemas/review.schema";
 
 enum ERoles {
   User = "user",
@@ -20,7 +21,7 @@ export class User {
   @Prop({ required: true })
   password: string;
 
-  @Prop({ type: Array<string>, required: true, default: ["user", 'admin'] })
+  @Prop({ type: Array<string>, required: true, default: ["user", "admin"] })
   roles: string[];
 
   @Prop()
@@ -41,7 +42,10 @@ export class User {
   avatarMini: string;
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }] })
-  products: Product[];
+  products: [string];
+
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }] })
+  reviews: [string];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -53,8 +57,8 @@ UserSchema.virtual("id").get(function () {
 UserSchema.set("toJSON", {
   virtuals: true,
   transform: (doc, ret, options) => {
-        delete ret.__v;
-        ret.id = ret._id.toString();
-        delete ret._id;
-    },
+    delete ret.__v;
+    ret.id = ret._id.toString();
+    delete ret._id;
+  },
 });
