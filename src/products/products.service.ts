@@ -295,7 +295,7 @@ export class ProductsService {
     if (product) {
       return product;
     } else {
-      throw new NotFoundException("product not found");
+      throw new NotFoundException("Product not found");
     }
   }
 

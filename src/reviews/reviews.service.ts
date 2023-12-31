@@ -28,8 +28,6 @@ export class ReviewsService {
 
   async create(productId, userId: string, createReviewDto) {
     const product = await this.productsService.findOneById(productId);
-    if (product) throw new NotFoundException("product not found");
-
     const user = await this.usersService.findById(userId);
     let review = await this.reviewModel.create({
       ...createReviewDto,
@@ -50,6 +48,27 @@ export class ReviewsService {
     return review;
   }
 
+  async update(id, userId, createReviewDto) {
+    const user = await this.usersService.findById(userId);
+    let review = await this.findOneById(id);
+
+    if (review.user.toString() !== user.id) {
+      throw new ForbiddenException("Forbidden");
+    }
+
+    review.rating = createReviewDto.rating;
+    review.text = createReviewDto.text;
+
+    await review.save();
+
+    review = await review.populate({
+      path: "user",
+      select: "username avatarMini id",
+    });
+
+    return review;
+  }
+
   async getAllByProductId(productId) {
     const reviews = await this.reviewModel
       .find({ product: productId })
@@ -61,12 +80,14 @@ export class ReviewsService {
 
   async deleteOneById(id: string, userId: string) {
     let review = await this.findOneById(id);
-
-    if (userId !== review.user) throw new ForbiddenException("forbidden");
+    console.log(review.user);
+    console.log(userId);
+    if (userId !== review.user.toString())
+      throw new ForbiddenException("forbidden");
 
     // const result = await this.reviewModel.findByIdAndDelete(id);
 
-    review = review.remove();
+    review = await review.deleteOne();
     console.log(1111111, review);
     return {
       id: review.id,

@@ -32,7 +32,6 @@ export class UsersService {
     const user = await this.userModel.findById(id)
     if(!user) {
       throw new NotFoundException('User not found')
-      
     }
     
     return user

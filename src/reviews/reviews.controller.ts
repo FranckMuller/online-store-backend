@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Delete,
+  Patch,
   Body,
   Param,
   HttpCode,
@@ -36,6 +37,18 @@ export class ReviewsController {
     @Body() createReviewDto: CreateReviewDto
   ) {
     return this.reviewsService.create(productId, user.userId, createReviewDto);
+  }
+  
+  @UseGuards(AccessTokenGuard)
+  @HttpCode(200)
+  @ApiOkResponse({ type: ReviewResponse })
+  @Patch(":id")
+  update(
+    @Param("id") id: string,
+    @UseUser() user: IUserPayload,
+    @Body() createReviewDto: CreateReviewDto
+  ) {
+    return this.reviewsService.update(id, user.userId, createReviewDto);
   }
 
   @Get(":productId")
