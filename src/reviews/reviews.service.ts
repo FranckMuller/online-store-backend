@@ -69,12 +69,22 @@ export class ReviewsService {
     return review;
   }
 
-  async getAllByProductId(productId) {
+  async getAllByProductId(productId, params) {
     const reviews = await this.reviewModel
       .find({ product: productId })
-      .limit(3)
+      .limit(params.limit)
+      .skip(params.offset)
       .sort({ createdAt: -1 })
       .populate({ path: "user", select: "username avatarMini id" });
+
+    const count = await this.reviewModel.countDocuments();
+    const nextOffset = Number(params.offset) + Number(params.limit);
+    const offset = count > nextOffset ? nextOffset : undefined;
+
+    return {
+      reviews,
+      offset,
+    };
     return reviews;
   }
 

@@ -8,6 +8,7 @@ import {
   Param,
   HttpCode,
   UseGuards,
+  Query,
 } from "@nestjs/common";
 import { ApiTags, ApiOkResponse, ApiBearerAuth } from "@nestjs/swagger";
 import { ReviewsService } from "./reviews.service";
@@ -16,6 +17,11 @@ import { ReviewResponse } from "./response.types";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 import { UseUser } from "../decorators/use-user.decorator";
 import type { IUserPayload } from "../decorators/use-user.decorator";
+
+type GetReviewsByProductParams = {
+  page: number,
+  limit: number
+}
 
 @ApiBearerAuth()
 @ApiTags("reviews")
@@ -38,7 +44,7 @@ export class ReviewsController {
   ) {
     return this.reviewsService.create(productId, user.userId, createReviewDto);
   }
-  
+
   @UseGuards(AccessTokenGuard)
   @HttpCode(200)
   @ApiOkResponse({ type: ReviewResponse })
@@ -52,8 +58,9 @@ export class ReviewsController {
   }
 
   @Get(":productId")
-  getAllByProductId(@Param("productId") productId: string) {
-    return this.reviewsService.getAllByProductId(productId);
+  getAllByProductId(@Param("productId") productId: string, @Query() params: GetReviewsByProductParams) {
+    console.log(params);
+    return this.reviewsService.getAllByProductId(productId, params);
   }
 
   @UseGuards(AccessTokenGuard)
