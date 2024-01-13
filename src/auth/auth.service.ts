@@ -48,7 +48,6 @@ export class AuthService {
         password: hashedPassword,
       };
       const createdUser = await this.usersService.create(data);
-      console.log(createdUser);
       const { accessToken, refreshToken } = await this.generateTokens(
         createdUser.id,
         createdUser.username,
@@ -81,7 +80,6 @@ export class AuthService {
 
   async signin(signinDto, res) {
     const user = await this.usersService.findOne(signinDto);
-    console.log(user);
     if (!user) throw new NotFoundException("user does not exists");
 
     const matchPassword = await bcrypt.compare(

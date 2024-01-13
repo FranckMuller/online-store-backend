@@ -2,7 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
+  ForbiddenException
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
@@ -14,43 +14,9 @@ import { Product } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
 import { ImagesService } from "../images/images.service";
 import { CategoriesService } from "../categories/categories.service";
-import { selectedProductsFields } from "./selected-fields";
-
-// TODO enum
-
-type TSortProducts = {
-  createdAt?: 1 | -1;
-  price?: 1 | -1;
-};
-
-type TFilterProducts = {
-  minPrice?: number;
-  maxPrice?: number;
-};
-
-enum ProductFields {
-  _Id = "_id",
-  Id = "id",
-  Name = "name",
-  Description = "description",
-  Price = "price",
-  Images = "images",
-  MainImage = "mainImage",
-  Published = "published",
-  Reviews = "reviews",
-}
-
-const selectedMyProductsFields = {
-  id: 1,
-  name: 1,
-  description: 1,
-  price: 1,
-  images: 1,
-  mainImage: 1,
-  published: 1,
-  categories: 1,
-  reviews: 1,
-};
+import { selectedProductsFields, selectedMyProductsFields } from "./selected-fields";
+import { ProductDocument } from "./schemas/product.schema";
+import type { TSortProducts } from "../types/products.types";
 
 @Injectable()
 export class ProductsService {
@@ -62,121 +28,13 @@ export class ProductsService {
   ) {}
 
   async findAll(filters) {
-    let $sort: TSortProducts = {
-      createdAt: 1,
-    };
-    let $match: any = {};
+    const { $match, $sort } = await this.getMappedFilters(filters);
 
-    if (filters.sort) {
-      switch (filters.sort) {
-        case EProductsSort.Newest:
-          $sort.createdAt = 1;
-          break;
-        case EProductsSort.Oldest:
-          $sort.createdAt = -1;
-          break;
-
-        case EProductsSort.HighPrice:
-          delete $sort.createdAt;
-          $sort.price = -1;
-          break;
-
-        case EProductsSort.MinPrice:
-          delete $sort.createdAt;
-          $sort.price = 1;
-          break;
-      }
-    }
-
-    if (filters.minPrice && filters.maxPrice) {
-      $match = {
-        $and: [
-          {
-            price: {
-              $gte: Number(filters.minPrice),
-              $lte: Number(filters.maxPrice),
-            },
-          },
-        ],
-      };
-    }
-
-    if (filters.maxPrice && !filters.minPrice) {
-      $match.price = { $lte: Number(filters.maxPrice) };
-    }
-
-    if (filters.minPrice && !filters.maxPrice) {
-      $match.price = { $gte: Number(filters.minPrice) };
-    }
-
-    if (filters.category && filters.category !== "all") {
-      const foundCategory = await this.getCategoryByName(filters.category);
-      $match.category = foundCategory._id;
-    }
-
-    const pipeline: mongoose.PipelineStage[] = [
-      {
-        $match,
-      },
-      {
-        $project: {
-          ...selectedProductsFields,
-          totalReviews: {
-            $cond: {
-              if: { $isArray: "$reviews" },
-              then: { $size: "$reviews" },
-              else: 0,
-            },
-          },
-        },
-      },
-
-      // {
-      //   $addField: {reviewTotal}
-      // },
-
-      {
-        $lookup: {
-          from: "images",
-          localField: "mainImage",
-          foreignField: "_id",
-          as: "mainImage",
-        },
-      },
-
-      {
-        $lookup: {
-          from: "categories",
-          localField: "category",
-          foreignField: "_id",
-          as: "category",
-        },
-      },
-
-      {
-        $unwind: {
-          path: "$mainImage",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $unwind: {
-          path: "$category",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-
-      {
-        $sort,
-      },
-
-      // {
-      //   $limit: 2,
-      // },
-    ];
-
-    const products = await this.productModel.aggregate(pipeline);
-
+    const products = await this.productModel
+      .find($match)
+      .sort($sort)
+      .populate({ path: "mainImage" })
+      .then(p => p.map(product => product.toJSON({ getters: true })));
     return products;
   }
 
@@ -189,7 +47,7 @@ export class ProductsService {
     const user = await this.usersService.findById(userId);
     const productData = {
       ...createProductDto,
-      owner: user.id,
+      owner: user.id
     };
     const product = await this.productModel.create(productData);
 
@@ -221,7 +79,7 @@ export class ProductsService {
     if (updateProductDto.deletingImagesIds) {
       const ids = JSON.parse(updateProductDto.deletingImagesIds);
       const deletingResult = await this.imagesService.deleteMany(ids);
-      const newImagesIds = product.images.filter((el) => {
+      const newImagesIds = product.images.filter(el => {
         if (!ids.includes(el.toString())) {
           return true;
         }
@@ -256,7 +114,6 @@ export class ProductsService {
   }
 
   async getMyProducts(userId: string) {
-    console.log(userId);
     const products = await this.productModel
       .find({ owner: userId })
       // .select(`-${ProductFields.Images}`)
@@ -277,20 +134,7 @@ export class ProductsService {
       .select(selectedMyProductsFields)
       .populate({ path: "images", select: "id path" })
       .populate({ path: "mainImage", select: "id path" })
-      .populate({ path: "category" })
-      // .populate({
-      //   path: "reviews",
-      //   populate: {
-      //     path: "user",
-      //     select: "username avatarMini id",
-      //   },
-      //   options: {
-      //     sort: {
-      //       createdAt: -1,
-      //     },
-      //     limit: 3,
-      //   },
-      // });
+      .populate({ path: "category" });
 
     if (product) {
       return product;
@@ -312,4 +156,75 @@ export class ProductsService {
   private getCategoryByName(categoryName: string) {
     return this.categoriesService.findByName(categoryName);
   }
+
+  private async getMappedFilters(filters) {
+    const { sort, ...match } = filters;
+    const $match = await this.getFilterMatch(match);
+    const $sort = this.getFilterSort(sort);
+
+    return { $match, $sort };
+  }
+
+  private async getFilterMatch(filters) {
+    let $match: any = {};
+
+    if (filters.minPrice && filters.maxPrice) {
+      $match = {
+        $and: [
+          {
+            price: {
+              $gte: Number(filters.minPrice),
+              $lte: Number(filters.maxPrice)
+            }
+          }
+        ]
+      };
+    }
+
+    if (filters.maxPrice && !filters.minPrice) {
+      $match.price = { $lte: Number(filters.maxPrice) };
+    }
+
+    if (filters.minPrice && !filters.maxPrice) {
+      $match.price = { $gte: Number(filters.minPrice) };
+    }
+
+    if (filters.category && filters.category !== "all") {
+      const foundCategory = await this.getCategoryByName(filters.category);
+      $match.category = foundCategory._id;
+    }
+
+    if (filters.rating) {
+      $match.rating = 1;
+    }
+
+    return $match;
+  }
+
+  getFilterSort = (sort: keyof EProductsSort) => {
+    let $sort: TSortProducts = {
+      createdAt: -1
+    };
+    switch (sort) {
+      case EProductsSort.Newest as string:
+        $sort.createdAt = -1;
+        break;
+
+      case EProductsSort.Oldest as string:
+        $sort.createdAt = 1;
+        break;
+
+      case EProductsSort.HighPrice as string:
+        delete $sort.createdAt;
+        $sort.price = -1;
+        break;
+
+      case EProductsSort.MinPrice as string:
+        delete $sort.createdAt;
+        $sort.price = 1;
+        break;
+    }
+
+    return $sort;
+  };
 }

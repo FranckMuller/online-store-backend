@@ -11,7 +11,6 @@ export class UsersService {
 
   // TODO check if user already exist
   async create(createUserDto: CreateUserDto) {
-    // new userModel.save()
     const user = new this.userModel({
       ...createUserDto,
       roles: ["user", "admin"],
@@ -29,12 +28,12 @@ export class UsersService {
   }
 
   async findById(id: string) {
-    const user = await this.userModel.findById(id)
-    if(!user) {
-      throw new NotFoundException('User not found')
+    const user = await this.userModel.findById(id);
+    if (!user) {
+      throw new NotFoundException("User not found");
     }
-    
-    return user
+
+    return user;
   }
 
   async findOne(filter) {
@@ -46,7 +45,18 @@ export class UsersService {
       ],
     });
 
+    if (!user) throw new NotFoundException("user not found");
+
     return user;
+  }
+
+  async updateAvatar(avatar, userId) {
+    const user = await this.findOne({ id: userId });
+    user.avatar = `/${avatar.path}`;
+    user.avatarMini = `/${avatar.path}`;
+
+    const result = await user.save();
+    return result.avatarMini;
   }
 
   async getMyProducts(userId: string) {

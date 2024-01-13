@@ -1,5 +1,6 @@
 import {
   Controller,
+  Res,
   Get,
   Post,
   Req,
@@ -13,7 +14,7 @@ import {
   UploadedFiles,
   UseInterceptors,
   UseGuards,
-  Request,
+  Request
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -21,11 +22,12 @@ import {
   ApiBody,
   ApiBearerAuth,
   ApiOkResponse,
+  ApiQuery
 } from "@nestjs/swagger";
 import {
   FilesInterceptor,
   FileInterceptor,
-  FileFieldsInterceptor,
+  FileFieldsInterceptor
 } from "@nestjs/platform-express";
 import { Express } from "express";
 import { diskStorage } from "multer";
@@ -36,6 +38,7 @@ import { GetProductsDto } from "./dto/get-products.dto";
 import { fileStorage } from "../files/storage";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 import { UseUser } from "../decorators/use-user.decorator";
+import { GetAllProducts } from "./products.decorator";
 
 interface IAccessTokenPayload {
   userId: string;
@@ -47,13 +50,23 @@ interface IAccessTokenPayload {
 @ApiTags("products")
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
+  @Get()
+  @GetAllProducts()
+  async getAll(@Res({ passthrough: true }) res, @Query() filters: GetProductsDto) {
+    return this.productsService.findAll(filters);
+    // const products = await this.productsService.findAll(filters);
+    // return products;
+    // return res.status(200).json(products);
+  }
+
   // TODO validate images
   @UseGuards(AccessTokenGuard)
   @Post()
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(
     FilesInterceptor("images", 5, {
-      storage: fileStorage,
+      storage: fileStorage
     })
   )
   create(
@@ -71,7 +84,7 @@ export class ProductsController {
     FileFieldsInterceptor(
       [
         { name: "image", maxCount: 5 },
-        { name: "mainImage", maxCount: 1 },
+        { name: "mainImage", maxCount: 1 }
       ],
       { storage: fileStorage }
     )
@@ -95,11 +108,6 @@ export class ProductsController {
     );
   }
 
-  @Get()
-  findAll(@Query() filters: GetProductsDto) {
-    return this.productsService.findAll(filters);
-  }
-
   // TODO make a ApiOkResponse
   @UseGuards(AccessTokenGuard)
   @Get("my")
@@ -114,8 +122,9 @@ export class ProductsController {
   }
 
   @Get(":id")
-  findOneById(@Param("id") id: string) {
-    return this.productsService.findOneById(id);
+  async findOneById(@Res() res, @Param("id") id: string) {
+    const product = await this.productsService.findOneById(id);
+    return res.status(200).json(product.toJSON({ getters: true }));
   }
 
   @UseGuards(AccessTokenGuard)

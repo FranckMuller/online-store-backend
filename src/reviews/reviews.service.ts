@@ -35,6 +35,18 @@ export class ReviewsService {
       product: product.id,
     });
     product.reviews.push(review.id);
+
+      // if (product.rating.count === 0) {
+      //   product.rating.count = 1;
+      //   product.rating.value = createReviewDto.rating;
+      // } else {
+      //   product.rating.value =
+      //     (product.rating.value * product.rating.count + createReviewDto.rating) /
+      //     ++product.rating.count;
+          
+      //   product.rating.count = product.rating.count + 1;
+      // }
+
     user.reviews.push(review.id);
 
     await product.save();

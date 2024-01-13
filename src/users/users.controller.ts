@@ -9,14 +9,29 @@ import {
   HttpCode,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from "@nestjs/common";
+import {
+  FilesInterceptor,
+  FileInterceptor,
+  FileFieldsInterceptor,
+} from "@nestjs/platform-express";
 import { ApiTags, ApiOkResponse } from "@nestjs/swagger";
+import { fileStorage } from "../files/storage";
 import { UsersService } from "./users.service";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 import { UsersResponse } from "./types";
 import { UseUser } from "../decorators/use-user.decorator";
+
+import { Express } from "express";
+
+interface IAccessTokenPayload {
+  userId: string;
+  username: string;
+}
 
 @Controller("users")
 @ApiTags("users")
@@ -59,5 +74,15 @@ export class UsersController {
   @Delete(":id")
   remove(@Param("id") id: string) {
     return this.usersService.remove(+id);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Post("update-avatar")
+  @UseInterceptors(FileInterceptor("avatar", { storage: fileStorage }))
+  updateAvatar(
+    @UploadedFile() avatar: Express.Multer.File,
+    @UseUser() user: IAccessTokenPayload
+  ) {
+    return this.usersService.updateAvatar(avatar, user.userId);
   }
 }
