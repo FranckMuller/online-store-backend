@@ -1,7 +1,7 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
+  ForbiddenException
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import mongoose, { Model } from "mongoose";
@@ -25,62 +25,7 @@ export class ReviewsService {
 
     return reviews;
   }
-
-  async create(productId, userId: string, createReviewDto) {
-    const product = await this.productsService.findOneById(productId);
-    const user = await this.usersService.findById(userId);
-    let review = await this.reviewModel.create({
-      ...createReviewDto,
-      user: user.id,
-      product: product.id,
-    });
-    product.reviews.push(review.id);
-
-      // if (product.rating.count === 0) {
-      //   product.rating.count = 1;
-      //   product.rating.value = createReviewDto.rating;
-      // } else {
-      //   product.rating.value =
-      //     (product.rating.value * product.rating.count + createReviewDto.rating) /
-      //     ++product.rating.count;
-          
-      //   product.rating.count = product.rating.count + 1;
-      // }
-
-    user.reviews.push(review.id);
-
-    await product.save();
-    await user.save();
-
-    review = await review.populate({
-      path: "user",
-      select: "username avatarMini id",
-    });
-
-    return review;
-  }
-
-  async update(id, userId, createReviewDto) {
-    const user = await this.usersService.findById(userId);
-    let review = await this.findOneById(id);
-
-    if (review.user.toString() !== user.id) {
-      throw new ForbiddenException("Forbidden");
-    }
-
-    review.rating = createReviewDto.rating;
-    review.text = createReviewDto.text;
-
-    await review.save();
-
-    review = await review.populate({
-      path: "user",
-      select: "username avatarMini id",
-    });
-
-    return review;
-  }
-
+  
   async getAllByProductId(productId, params) {
     const reviews = await this.reviewModel
       .find({ product: productId })
@@ -95,26 +40,75 @@ export class ReviewsService {
 
     return {
       reviews,
-      offset,
+      offset
     };
-    return reviews;
+  }
+
+  async create(productId, userId: string, createReviewDto) {
+    const product = await this.productsService.findOneById(productId);
+    const user = await this.usersService.findById(userId);
+    let review = await this.reviewModel.create({
+      ...createReviewDto,
+      user: user.id,
+      product: product.id
+    });
+
+    product.rating = createReviewDto.rating;
+    product.markModified("rating");
+
+    product.reviews.push(review.id);
+    user.reviews.push(review.id);
+
+    await product.save();
+    await user.save();
+
+    review = await review.populate({
+      path: "user",
+      select: "username avatarMini id"
+    });
+
+    return review;
+  }
+
+  async update(id, userId, dto) {
+    let review = await this.findOneById(id);
+    if (!review) throw new NotFoundException("review not found");
+
+    const user = await this.usersService.findById(userId);
+    if (!user || review.user.toString() !== user.id)
+      throw new ForbiddenException("forbidden");
+
+    if (dto.rating) {
+      await this.productsService.updateRating(
+        id,
+        dto.rating,
+        review.rating
+      );
+    }
+    
+    review.rating = dto.rating;
+    review.text = dto.text;
+
+    await review.save();
+    review = await review.populate({
+      path: "user",
+      select: "username avatarMini id"
+    });
+
+    return review;
   }
 
   async deleteOneById(id: string, userId: string) {
     let review = await this.findOneById(id);
-    console.log(review.user);
-    console.log(userId);
-    if (userId !== review.user.toString())
+    if (userId !== review.user.toString()) {
       throw new ForbiddenException("forbidden");
+    }
 
-    // const result = await this.reviewModel.findByIdAndDelete(id);
-
-    review = await review.deleteOne();
-    console.log(1111111, review);
+    const product = await this.productsService.removeReview(id, review.rating);
+    const result = await this.reviewModel.findByIdAndDelete(id);
     return {
-      id: review.id,
+      id: review.id
     };
-    // return result;
   }
 
   async findOneById(id: string) {

@@ -3,11 +3,12 @@ import mongoose, { HydratedDocument } from "mongoose";
 import { User } from "../../users/schemas/user.schema";
 import { Image } from "../../images/schemas/image.schema";
 import { Review } from "../../reviews/schemas/review.schema";
+import { getAverageRating, setRating } from "./helper";
 
 import type { IProductRatingObj } from "../../types/products.types";
 
 export type ProductDocument = HydratedDocument<Product>;
-// versionKey: false
+
 @Schema({
   timestamps: true,
   toObject: { getters: true },
@@ -31,32 +32,9 @@ export class Product {
 
   @Prop({
     type: mongoose.Schema.Types.Mixed,
-    default: { 1: 1, 2: 1, 3: 1, 4: 1, 5: 1 },
-    get: function (r) {
-      let items = Object.entries(r);
-      let sum = 0;
-      let total = 0;
-      for (let [key, value] of items) {
-        total += value as number;
-        sum += ((value as number) * parseInt(key)) as number;
-      }
-      return Math.round(sum / total);
-    },
-    set: function (r) {
-      if (!(this instanceof mongoose.Document)) {
-        if (r instanceof Object) return r;
-        else {
-          throw new Error("");
-        }
-      } else {
-        if (r instanceof Object) {
-          return r;
-        }
-        this.get("rating", null, { getters: false })[r] =
-          1 + parseInt(this.get("rating", null, { getters: false })[r]);
-        return this.get("rating", null, { getters: false });
-      }
-    },
+    default: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    get: getAverageRating,
+    set: setRating,
     validate: {
       validator: function (i) {
         let b = [1, 2, 3, 4, 5];
@@ -88,6 +66,10 @@ const ProductSchema = SchemaFactory.createForClass(Product);
 // ProductSchema.virtual("id").get(function () {
 //   return this._id.toHexString();
 // });
+
+ProductSchema.virtual("totalReviews").get(function () {
+  return this.reviews.length;
+});
 
 ProductSchema.set("toJSON", {
   virtuals: true,

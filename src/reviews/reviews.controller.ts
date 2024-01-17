@@ -8,20 +8,21 @@ import {
   Param,
   HttpCode,
   UseGuards,
-  Query,
+  Query
 } from "@nestjs/common";
 import { ApiTags, ApiOkResponse, ApiBearerAuth } from "@nestjs/swagger";
 import { ReviewsService } from "./reviews.service";
 import { CreateReviewDto } from "./dto/create-review.dto";
+import { UpdateReviewDto } from "./dto/update-review.dto";
 import { ReviewResponse } from "./response.types";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 import { UseUser } from "../decorators/use-user.decorator";
 import type { IUserPayload } from "../decorators/use-user.decorator";
 
 type GetReviewsByProductParams = {
-  page: number,
-  limit: number
-}
+  page: number;
+  limit: number;
+};
 
 @ApiBearerAuth()
 @ApiTags("reviews")
@@ -52,14 +53,16 @@ export class ReviewsController {
   update(
     @Param("id") id: string,
     @UseUser() user: IUserPayload,
-    @Body() createReviewDto: CreateReviewDto
+    @Body() createReviewDto: UpdateReviewDto
   ) {
     return this.reviewsService.update(id, user.userId, createReviewDto);
   }
 
   @Get(":productId")
-  getAllByProductId(@Param("productId") productId: string, @Query() params: GetReviewsByProductParams) {
-    console.log(params);
+  getAllByProductId(
+    @Param("productId") productId: string,
+    @Query() params: GetReviewsByProductParams
+  ) {
     return this.reviewsService.getAllByProductId(productId, params);
   }
 

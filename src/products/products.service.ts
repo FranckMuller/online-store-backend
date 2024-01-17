@@ -14,7 +14,10 @@ import { Product } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
 import { ImagesService } from "../images/images.service";
 import { CategoriesService } from "../categories/categories.service";
-import { selectedProductsFields, selectedMyProductsFields } from "./selected-fields";
+import {
+  selectedProductsFields,
+  selectedMyProductsFields
+} from "./selected-fields";
 import { ProductDocument } from "./schemas/product.schema";
 import type { TSortProducts } from "../types/products.types";
 
@@ -34,6 +37,8 @@ export class ProductsService {
       .find($match)
       .sort($sort)
       .populate({ path: "mainImage" })
+      .populate({ path: "owner", select: "username" })
+      .select(`-images`)
       .then(p => p.map(product => product.toJSON({ getters: true })));
     return products;
   }
@@ -131,7 +136,6 @@ export class ProductsService {
   async findOneById(id: string) {
     const product = await this.productModel
       .findById(id)
-      .select(selectedMyProductsFields)
       .populate({ path: "images", select: "id path" })
       .populate({ path: "mainImage", select: "id path" })
       .populate({ path: "category" });
@@ -151,6 +155,51 @@ export class ProductsService {
     } else {
       throw new ForbiddenException();
     }
+  }
+
+  async findAllByFilter(filters) {
+    const result = await this.productModel.find(filters);
+    return result;
+  }
+
+  async findOne(filters) {
+    const product = await this.productModel.findOne(filters);
+    return product;
+  }
+
+  async updateRating(reviewId, value, oldValue) {
+    let key = `rating.${value}`;
+    let oldKey = `rating.${oldValue}`;
+
+    const product = await this.productModel.updateOne(
+      { reviews: reviewId },
+      {
+        $inc: {
+          [key]: 1,
+          [oldKey]: -1
+        }
+      },
+      { setter: false }
+    );
+
+    return product;
+  }
+
+  async removeReview(reviewId: string, ratingValue) {
+    let key = `rating.${ratingValue}`;
+    const product = await this.productModel.updateOne(
+      { reviews: reviewId },
+      {
+        $pull: {
+          reviews: reviewId
+        },
+        $inc: {
+          [key]: -1
+        }
+      },
+      { setter: false }
+    );
+    return product;
   }
 
   private getCategoryByName(categoryName: string) {

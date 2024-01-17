@@ -8,5 +8,5 @@ export const corsOptions = {
     } else {
       callback(new Error("not allowed by cors"));
     }
-  }
+  } 
 };

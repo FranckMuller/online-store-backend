@@ -53,7 +53,10 @@ export class ProductsController {
 
   @Get()
   @GetAllProducts()
-  async getAll(@Res({ passthrough: true }) res, @Query() filters: GetProductsDto) {
+  async getAll(
+    @Res({ passthrough: true }) res,
+    @Query() filters: GetProductsDto
+  ) {
     return this.productsService.findAll(filters);
     // const products = await this.productsService.findAll(filters);
     // return products;
@@ -125,6 +128,7 @@ export class ProductsController {
   async findOneById(@Res() res, @Param("id") id: string) {
     const product = await this.productsService.findOneById(id);
     return res.status(200).json(product.toJSON({ getters: true }));
+    // return res.status(200).json(product);
   }
 
   @UseGuards(AccessTokenGuard)

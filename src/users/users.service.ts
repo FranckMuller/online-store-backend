@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateUserDto } from "./dto/create-user.dto";
@@ -13,7 +13,7 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     const user = new this.userModel({
       ...createUserDto,
-      roles: ["user", "admin"],
+      roles: ["user", "admin"]
     });
 
     await user.save();
@@ -41,8 +41,8 @@ export class UsersService {
       $or: [
         { _id: { $eq: filter.id } },
         { username: { $eq: filter.username } },
-        { email: { $eq: filter.email } },
-      ],
+        { email: { $eq: filter.email } }
+      ]
     });
 
     if (!user) throw new NotFoundException("user not found");
@@ -81,5 +81,17 @@ export class UsersService {
     user.refreshToken = refreshToken;
     await user.save();
     return user;
+  }
+
+  async checkExistWithException(filter) {
+    const user = await this.userModel.findOne({
+      $or: [
+        { _id: { $eq: filter.id } },
+        { username: { $eq: filter.username } },
+        { email: { $eq: filter.email } }
+      ]
+    });
+
+    if (user) throw new ConflictException("user already exists");
   }
 }
