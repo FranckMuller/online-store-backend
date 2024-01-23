@@ -25,7 +25,7 @@ export class ReviewsService {
 
     return reviews;
   }
-  
+
   async getAllByProductId(productId, params) {
     const reviews = await this.reviewModel
       .find({ product: productId })
@@ -34,9 +34,12 @@ export class ReviewsService {
       .sort({ createdAt: -1 })
       .populate({ path: "user", select: "username avatarMini id" });
 
-    const count = await this.reviewModel.countDocuments();
-    const nextOffset = Number(params.offset) + Number(params.limit);
-    const offset = count > nextOffset ? nextOffset : undefined;
+    const count = await this.reviewModel.countDocuments({ product: productId });
+    const nextOffset = +params.offset + +params.limit;
+    const offset =
+      +params.offset + +params.limit + 1 <= count
+        ? nextOffset
+        : undefined;
 
     return {
       reviews,
@@ -79,13 +82,9 @@ export class ReviewsService {
       throw new ForbiddenException("forbidden");
 
     if (dto.rating) {
-      await this.productsService.updateRating(
-        id,
-        dto.rating,
-        review.rating
-      );
+      await this.productsService.updateRating(id, dto.rating, review.rating);
     }
-    
+
     review.rating = dto.rating;
     review.text = dto.text;
 

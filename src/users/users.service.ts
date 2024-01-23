@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Inject,
+  forwardRef
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { User } from "./schemas/user.schema";
+import { ProductsService } from "../products/products.service";
 
 @Injectable()
 export class UsersService {
@@ -22,12 +29,14 @@ export class UsersService {
   }
 
   async findAll() {
-    const users = await this.userModel.find({});
-
+    const users = await this.userModel
+      .find({})
+      .select("id username email avatarMini");
+console.log(users)
     return users;
   }
 
-  async findById(id: string) {
+  async findById(id: string) {  
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException("User not found");

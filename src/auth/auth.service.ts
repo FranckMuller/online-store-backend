@@ -22,7 +22,7 @@ const cookieConfig = {
   httpOnly: true,
   secure: true,
   sameSite: "None",
-  maxAge: 24 * 7 * 60 * 60 * 1000,
+  maxAge: 24 * 7 * 60 * 60 * 1000
 };
 
 @Injectable()
@@ -40,7 +40,7 @@ export class AuthService {
       const hashedPassword = this.hashData(createUserDto.password);
       const data = {
         ...createUserDto,
-        password: hashedPassword,
+        password: hashedPassword
       };
       const createdUser = await this.usersService.create(data);
       const { accessToken, refreshToken } = await this.generateTokens(
@@ -64,9 +64,9 @@ export class AuthService {
           username: user.username,
           email: user.email,
           roles: user.roles,
-          avatarMini: user.avatarMini,
+          avatarMini: user.avatarMini
         },
-        accessToken,
+        accessToken
       };
     } catch (error) {
       console.log(error);
@@ -103,8 +103,8 @@ export class AuthService {
         username: user.username,
         email: user.email,
         roles: user.roles,
-        avatarMini: user.avatarMini,
-      },
+        avatarMini: user.avatarMini
+      }
     };
   }
 
@@ -119,7 +119,7 @@ export class AuthService {
   async refreshToken(req) {
     if (req.cookies.jwt) {
       const decoded = this.jwtService.verify(req.cookies.jwt, {
-        secret: process.env.JWT_REFRESH_SECRET,
+        secret: process.env.JWT_REFRESH_SECRET
       });
 
       const user = await this.usersService.findOne({ id: decoded.userId });
@@ -156,8 +156,8 @@ export class AuthService {
         username: user.username,
         email: user.email,
         roles: user.roles,
-        avatarMini: user.avatarMini,
-      },
+        avatarMini: user.avatarMini
+      }
     };
   }
 
@@ -171,29 +171,29 @@ export class AuthService {
         {
           userId,
           username,
-          roles,
+          roles
         },
         {
           secret: process.env.JWT_ACCESS_SECRET,
-          expiresIn: "7d",
+          expiresIn: "7d"
         }
       ),
 
-      this.jwtService.signAsync(  
+      this.jwtService.signAsync(
         {
           userId,
-          username,
+          username
         },
         {
           secret: process.env.JWT_REFRESH_SECRET,
-          expiresIn: "7d",
+          expiresIn: "7d"
         }
-      ),
+      )
     ]);
 
     return {
       accessToken,
-      refreshToken,
+      refreshToken
     };
   }
 

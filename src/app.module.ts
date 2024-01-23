@@ -17,16 +17,16 @@ import { ReviewsModule } from "./reviews/reviews.module";
     ConfigModule.forRoot({ isGlobal: true }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, "..", "uploads"),
-      serveRoot: '/uploads/'
+      serveRoot: "/uploads/"
     }),
     MongooseModule.forRoot(process.env.DB_URL, {
-      connectionFactory: (connection) => {
+      connectionFactory: connection => {
         connection.on("connected", () => {
           console.log("connected to mongodb");
         });
         connection._events.connected();
         return connection;
-      },
+      }
     }),
     AuthModule,
     UsersModule,
@@ -34,9 +34,9 @@ import { ReviewsModule } from "./reviews/reviews.module";
     FilesModule,
     ImagesModule,
     CategoriesModule,
-    ReviewsModule,
+    ReviewsModule
   ],
   controllers: [],
-  providers: [],
+  providers: []
 })
 export class AppModule {}

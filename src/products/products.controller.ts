@@ -14,7 +14,8 @@ import {
   UploadedFiles,
   UseInterceptors,
   UseGuards,
-  Request
+  Request,
+  HttpCode
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -53,14 +54,8 @@ export class ProductsController {
 
   @Get()
   @GetAllProducts()
-  async getAll(
-    @Res({ passthrough: true }) res,
-    @Query() filters: GetProductsDto
-  ) {
+  getAll(@Res({ passthrough: true }) res, @Query() filters: GetProductsDto) {
     return this.productsService.findAll(filters);
-    // const products = await this.productsService.findAll(filters);
-    // return products;
-    // return res.status(200).json(products);
   }
 
   // TODO validate images
@@ -124,11 +119,23 @@ export class ProductsController {
     return this.productsService.findOneById(id);
   }
 
+  @UseGuards(AccessTokenGuard)
+  @Get("favorites")
+  getFavorites(@UseUser() user: IAccessTokenPayload) {
+    return this.productsService.getFavorites(user.userId);
+  }
+  
+  @HttpCode(201)
+  @UseGuards(AccessTokenGuard)
+  @Patch("favorites/:id")
+  toggleFavorites(@UseUser() user: IAccessTokenPayload, @Param("id") id) {
+    return this.productsService.toggleFavorites(id, user.userId);
+  }
+
   @Get(":id")
   async findOneById(@Res() res, @Param("id") id: string) {
     const product = await this.productsService.findOneById(id);
     return res.status(200).json(product.toJSON({ getters: true }));
-    // return res.status(200).json(product);
   }
 
   @UseGuards(AccessTokenGuard)

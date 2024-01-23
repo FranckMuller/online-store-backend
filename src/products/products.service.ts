@@ -26,8 +26,8 @@ export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
     private readonly usersService: UsersService,
-    private readonly imagesService: ImagesService,
-    private readonly categoriesService: CategoriesService
+    private readonly categoriesService: CategoriesService,
+    private readonly imagesService: ImagesService
   ) {}
 
   async findAll(filters) {
@@ -202,6 +202,27 @@ export class ProductsService {
     return product;
   }
 
+  async getFavorites(userId) {
+    const user = await this.usersService.findById(userId);
+    return this.productModel.find({ _id: { $in: user.favorites } }).populate({ path: "images", select: "id path" })
+      .populate({ path: "mainImage", select: "id path" })
+      .populate({ path: "category" });;
+  }
+
+  async toggleFavorites(productId, userId) {
+    const user = await this.usersService.findById(userId);
+    const product = await this._findById(productId);
+    const idx = user.favorites.findIndex(id => id.toString() === product.id);
+    if (idx === -1) {
+      user.favorites.push(product.id);
+    } else {
+      user.favorites.splice(idx, 1);
+    }
+
+    await user.save();
+    return;
+  }
+
   private getCategoryByName(categoryName: string) {
     return this.categoriesService.findByName(categoryName);
   }
@@ -276,4 +297,10 @@ export class ProductsService {
 
     return $sort;
   };
+
+  private async _findById(id) {
+    const product = await this.productModel.findById(id);
+    if (!product) throw new NotFoundException('product not found');
+    return product;
+  }
 }

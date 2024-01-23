@@ -46,6 +46,9 @@ export class User {
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }] })
   reviews: [string];
+  
+  @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }] })
+  favorites: [string];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
