@@ -11,6 +11,8 @@ import { AuthModule } from "./auth/auth.module";
 import { ImagesModule } from "./images/images.module";
 import { CategoriesModule } from "./categories/categories.module";
 import { ReviewsModule } from "./reviews/reviews.module";
+import { PaymentModule } from "./payment/payment.module";
+import { OrdersModule } from "./orders/orders.module";
 
 @Module({
   imports: [
@@ -34,7 +36,9 @@ import { ReviewsModule } from "./reviews/reviews.module";
     FilesModule,
     ImagesModule,
     CategoriesModule,
-    ReviewsModule
+    ReviewsModule,
+    PaymentModule,
+    OrdersModule
   ],
   controllers: [],
   providers: []

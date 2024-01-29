@@ -76,6 +76,7 @@ export class ProductsController {
   }
 
   @UseGuards(AccessTokenGuard)
+  
   @Patch(":productId")
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(

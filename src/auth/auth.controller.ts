@@ -11,14 +11,14 @@ import {
   Res,
   Req,
   UseGuards,
-  Headers,
+  Headers
 } from "@nestjs/common";
 import type { Response, Request } from "express";
 import {
   ApiTags,
   ApiBody,
   ApiOkResponse,
-  ApiBearerAuth,
+  ApiBearerAuth
 } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
 import { SignupDto, SigninDto } from "./dto/auth.dto";
@@ -44,6 +44,7 @@ export class AuthController {
   }
 
   @ApiOkResponse({ type: AuthResponse })
+  @HttpCode(200)
   @Post("signin")
   signin(
     @Body() signinDto: SigninDto,
@@ -70,7 +71,7 @@ export class AuthController {
 
   @ApiOkResponse({ type: RefreshTokenResponse })
   @Get("refresh")
-  refreshToken( @Req() req: Request) {
-    return this.authService.refreshToken( req);
+  refreshToken(@Req() req: Request) {
+    return this.authService.refreshToken(req);
   }
 }

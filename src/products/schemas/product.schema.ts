@@ -1,5 +1,5 @@
-import { Prop, Schema, SchemaFactory, raw } from "@nestjs/mongoose";
-import mongoose, { HydratedDocument } from "mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
+import mongoose, { type HydratedDocument } from "mongoose";
 import { User } from "../../users/schemas/user.schema";
 import { Image } from "../../images/schemas/image.schema";
 import { Review } from "../../reviews/schemas/review.schema";

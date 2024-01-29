@@ -18,7 +18,6 @@ import {
   selectedProductsFields,
   selectedMyProductsFields
 } from "./selected-fields";
-import { ProductDocument } from "./schemas/product.schema";
 import type { TSortProducts } from "../types/products.types";
 
 @Injectable()

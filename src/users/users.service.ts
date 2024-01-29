@@ -32,11 +32,16 @@ export class UsersService {
     const users = await this.userModel
       .find({})
       .select("id username email avatarMini");
-console.log(users)
+    console.log(users);
     return users;
   }
 
-  async findById(id: string) {  
+  async findById(id: string) {
+    const user = await this.userModel.findById(id);
+    return user
+  }
+  
+  async findByIdWithException(id: string) {
     const user = await this.userModel.findById(id);
     if (!user) {
       throw new NotFoundException("User not found");
@@ -44,6 +49,8 @@ console.log(users)
 
     return user;
   }
+  
+  
 
   async findOne(filter) {
     const user = await this.userModel.findOne({
