@@ -32,7 +32,7 @@ export class UsersService {
     const users = await this.userModel
       .find({})
       .select("id username email avatarMini");
-    console.log(users);
+    
     return users;
   }
 

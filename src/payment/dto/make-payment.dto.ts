@@ -5,4 +5,8 @@ export class MakePaymentDto {
   @IsNotEmpty()
   @ApiProperty({ example: 100 })
   amount: number;
+  
+  @IsNotEmpty()
+  @ApiProperty()
+  orderId: string
 }

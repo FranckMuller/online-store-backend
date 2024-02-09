@@ -5,10 +5,11 @@ import { Product } from "../../products/schemas/product.schema";
 export type OrderDocument = HydratedDocument<Order>;
 
 export enum EOrderStatus {
-  PENDING,
-  PAYED,
-  SHIPPED,
-  DELIVERED
+  PENDING = "PENDING",
+  PAYED = "PAYED",
+  SHIPPED = "SHIPPED",
+  DELIVERED = "DELIVERED",
+  CANCELED = "CANCELED"
 }
 
 @Schema({
@@ -25,7 +26,7 @@ export class Order {
     type: [
       {
         quantity: { type: Number },
-        product: { type: mongoose.Schema.Types.ObjectId }
+        product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }
       }
     ]
   })
@@ -33,9 +34,16 @@ export class Order {
 
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "User" })
   user: string;
+
+  @Prop()
+  paymentUrl: string;
 }
 
 const OrderSchema = SchemaFactory.createForClass(Order);
+
+OrderSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
 
 OrderSchema.set("toJSON", {
   virtuals: true,
@@ -45,5 +53,14 @@ OrderSchema.set("toJSON", {
     delete ret._id;
   }
 });
+
+// OrderSchema.set("toObject", {
+//   virtuals: true,
+//   transform: (doc, ret, options) => {
+//     delete ret.__v;
+//     ret.id = ret._id.toString();
+//     delete ret._id;
+//   }
+// });
 
 export { OrderSchema };

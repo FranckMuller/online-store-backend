@@ -25,14 +25,13 @@ export class PaymentService {
           capture: true,
           confirmation: {
             type: "redirect",
-            return_url: "http://localhost:3000/catalog"
+            return_url: "http://localhost:3000/thanks"
           },
-          description: 'order #1'
+          description: dto.orderId
         }
       });
 
-      console.log(response);
-      return response.data
+      return response.data;
     } catch (err) {
       throw new ForbiddenException(err);
     }

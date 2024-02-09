@@ -28,6 +28,10 @@ export class ProductsService {
     private readonly categoriesService: CategoriesService,
     private readonly imagesService: ImagesService
   ) {}
+  
+  find(match) {
+    return this.productModel.find(match)
+  }
 
   async findAll(filters) {
     const { $match, $sort } = await this.getMappedFilters(filters);

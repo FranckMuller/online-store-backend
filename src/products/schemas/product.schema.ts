@@ -63,9 +63,9 @@ export class Product {
 
 const ProductSchema = SchemaFactory.createForClass(Product);
 
-// ProductSchema.virtual("id").get(function () {
-//   return this._id.toHexString();
-// });
+ProductSchema.virtual("id").get(function () {
+  return this._id.toHexString();
+});
 
 ProductSchema.virtual("totalReviews").get(function () {
   return this.reviews.length;
