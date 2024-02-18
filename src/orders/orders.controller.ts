@@ -5,6 +5,7 @@ import {
   Patch,
   Delete,
   Body,
+  Query,
   ValidationPipe,
   UsePipes,
   UseGuards,
@@ -16,6 +17,7 @@ import { OrdersService } from "./orders.service";
 import { UseUser } from "../decorators/use-user.decorator";
 import { CreateOrderDto } from "./dto/create-order.dto";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
+import { GetOrdersDto } from "./dto/get-orders.dto";
 
 interface IAccessTokenPayload {
   userId: string;
@@ -27,14 +29,17 @@ interface IAccessTokenPayload {
 @Controller("orders")
 export class OrdersController {
   constructor(private ordersService: OrdersService) {}
+  @UseGuards(AccessTokenGuard)
   @Get()
-  findAll() {
-    return this.ordersService.findAll();
+  getAll(
+    @UseUser() user: IAccessTokenPayload,
+    @Query() queryParams: GetOrdersDto
+  ) {
+    return this.ordersService.getAll(queryParams, user.userId);
   }
 
   @Post("confirm")
   confirmOrder(@Body() dto) {
-    console.log(dto);
     return this.ordersService.confirmOrder(dto);
   }
 
@@ -48,12 +53,6 @@ export class OrdersController {
     return this.ordersService.createOrder(dto, user.userId);
   }
 
-  @UseGuards(AccessTokenGuard)
-  @Get("pending")
-  findPending(@UseUser() user: IAccessTokenPayload) {
-    return this.ordersService.findPending(user.userId);
-  }
-
   // TODO check if user is owner order
   @HttpCode(204)
   @UseGuards(AccessTokenGuard)
@@ -62,7 +61,7 @@ export class OrdersController {
     return this.ordersService.cancelOrder(id);
   }
 
-// TODO check if user is owner order
+  // TODO check if user is owner order
   @HttpCode(204)
   @UseGuards(AccessTokenGuard)
   @Delete(":id")

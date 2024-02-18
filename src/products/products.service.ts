@@ -28,9 +28,9 @@ export class ProductsService {
     private readonly categoriesService: CategoriesService,
     private readonly imagesService: ImagesService
   ) {}
-  
+
   find(match) {
-    return this.productModel.find(match)
+    return this.productModel.find(match);
   }
 
   async findAll(filters) {
@@ -39,10 +39,14 @@ export class ProductsService {
     const products = await this.productModel
       .find($match)
       .sort($sort)
+      // .limit(5)
       .populate({ path: "mainImage" })
       .populate({ path: "owner", select: "username" })
+      .populate({ path: "category" })
       .select(`-images`)
-      .then(p => p.map(product => product.toJSON({ getters: true })));
+      .then(p =>
+        p.map(product => product.toJSON({ getters: true, virtuals: true }))
+      );
     return products;
   }
 
@@ -124,10 +128,9 @@ export class ProductsService {
   async getMyProducts(userId: string) {
     const products = await this.productModel
       .find({ owner: userId })
-      // .select(`-${ProductFields.Images}`)
-      // .select(selectedProductsFields)
+      .populate({ path: "category" })
       .populate({ path: "mainImage" })
-      .exec();
+      .then(p => p.map(product => product.toJSON({ getters: true })));
 
     if (!products) {
       throw new NotFoundException("products not found");
@@ -160,21 +163,11 @@ export class ProductsService {
     }
   }
 
-  async findAllByFilter(filters) {
-    const result = await this.productModel.find(filters);
-    return result;
-  }
-
-  async findOne(filters) {
-    const product = await this.productModel.findOne(filters);
-    return product;
-  }
-
   async updateRating(reviewId, value, oldValue) {
     let key = `rating.${value}`;
     let oldKey = `rating.${oldValue}`;
 
-    const product = await this.productModel.updateOne(
+    const product = await this.productModel.findOneAndUpdate(
       { reviews: reviewId },
       {
         $inc: {
@@ -182,15 +175,16 @@ export class ProductsService {
           [oldKey]: -1
         }
       },
-      { setter: false }
+      { setter: false, new: true }
     );
 
-    return product;
+    product.averageRating = +product.rating;
+    await product.save();
   }
 
   async removeReview(reviewId: string, ratingValue) {
     let key = `rating.${ratingValue}`;
-    const product = await this.productModel.updateOne(
+    const product = await this.productModel.findOneAndUpdate(
       { reviews: reviewId },
       {
         $pull: {
@@ -200,16 +194,20 @@ export class ProductsService {
           [key]: -1
         }
       },
-      { setter: false }
+      { setter: false, new: true }
     );
-    return product;
+
+    product.averageRating = +product.rating;
+    await product.save();
   }
 
   async getFavorites(userId) {
     const user = await this.usersService.findById(userId);
-    return this.productModel.find({ _id: { $in: user.favorites } }).populate({ path: "images", select: "id path" })
+    return this.productModel
+      .find({ _id: { $in: user.favorites } })
+      .populate({ path: "images", select: "id path" })
       .populate({ path: "mainImage", select: "id path" })
-      .populate({ path: "category" });;
+      .populate({ path: "category" });
   }
 
   async toggleFavorites(productId, userId) {
@@ -268,7 +266,10 @@ export class ProductsService {
     }
 
     if (filters.rating) {
-      $match.rating = 1;
+      const ratingArray = filters.rating.split("|").map(value => +value);
+      $match.averageRating = {
+        $in: ratingArray
+      };
     }
 
     return $match;
@@ -303,7 +304,7 @@ export class ProductsService {
 
   private async _findById(id) {
     const product = await this.productModel.findById(id);
-    if (!product) throw new NotFoundException('product not found');
+    if (!product) throw new NotFoundException("product not found");
     return product;
   }
 }

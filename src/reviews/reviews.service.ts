@@ -37,9 +37,7 @@ export class ReviewsService {
     const count = await this.reviewModel.countDocuments({ product: productId });
     const nextOffset = +params.offset + +params.limit;
     const offset =
-      +params.offset + +params.limit + 1 <= count
-        ? nextOffset
-        : undefined;
+      +params.offset + +params.limit + 1 <= count ? nextOffset : undefined;
 
     return {
       reviews,
@@ -48,7 +46,7 @@ export class ReviewsService {
   }
 
   async create(productId, userId: string, createReviewDto) {
-    const product = await this.productsService.findOneById(productId);
+    let product = await this.productsService.findOneById(productId);
     const user = await this.usersService.findById(userId);
     let review = await this.reviewModel.create({
       ...createReviewDto,
@@ -62,7 +60,9 @@ export class ReviewsService {
     product.reviews.push(review.id);
     user.reviews.push(review.id);
 
-    await product.save();
+    product = await product.save();
+    product.averageRating = +product.rating;
+    const newProduct = await product.save();
     await user.save();
 
     review = await review.populate({
@@ -83,9 +83,9 @@ export class ReviewsService {
 
     if (dto.rating) {
       await this.productsService.updateRating(id, dto.rating, review.rating);
+      review.rating = dto.rating;
     }
 
-    review.rating = dto.rating;
     review.text = dto.text;
 
     await review.save();
@@ -103,7 +103,7 @@ export class ReviewsService {
       throw new ForbiddenException("forbidden");
     }
 
-    const product = await this.productsService.removeReview(id, review.rating);
+    await this.productsService.removeReview(id, review.rating);
     const result = await this.reviewModel.findByIdAndDelete(id);
     return {
       id: review.id

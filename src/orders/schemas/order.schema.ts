@@ -5,11 +5,11 @@ import { Product } from "../../products/schemas/product.schema";
 export type OrderDocument = HydratedDocument<Order>;
 
 export enum EOrderStatus {
-  PENDING = "PENDING",
-  PAYED = "PAYED",
-  SHIPPED = "SHIPPED",
-  DELIVERED = "DELIVERED",
-  CANCELED = "CANCELED"
+  PENDING = "pending",
+  PAYED = "payed",
+  SHIPPED = "shippped",
+  DELIVERED = "delivered",
+  CANCELED = "canceled"
 }
 
 @Schema({

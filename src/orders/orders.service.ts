@@ -25,6 +25,25 @@ export class OrdersService {
     private paymentService: PaymentService
   ) {}
 
+  async getAll(queryParams, userId) {
+    const $match = { user: userId, ...queryParams };
+    console.log($match)
+    const orders = await this.orderModel
+      .find($match)
+      .select("id items amount status paymentUrl")
+      .lean({ virtuals: true })
+      .populate({
+        path: "items.product",
+        select: "id name mainImage price",
+        populate: {
+          path: "mainImage",
+          select: "path"
+        }
+      });
+
+    return orders;
+  }
+
   async createOrder(dto, userId) {
     const user = await this.usersService.findById(userId);
     if (!user) new ForbiddenException("forbidden");
@@ -70,48 +89,10 @@ export class OrdersService {
       .lean()
       .populate({ path: "items.product", select: "id mainImage name price" });
 
-    console.log(createdOrder);
     return createdOrder;
   }
 
-  async findPending(userId) {
-    const pendingOrders = await this.orderModel
-      .find({
-        status: EOrderStatus.PENDING,
-        user: userId
-      })
-      .lean({ virtuals: true })
-      .populate({
-        path: "items.product",
-        select: "id name price mainImage",
-        populate: {
-          path: "mainImage",
-          select: "path"
-        }
-      });
-
-    return pendingOrders;
-  }
-
-  async findAll() {
-    const orders = await this.orderModel
-      .find({})
-      .select("id items amount status paymentUrl")
-      .lean({ virtuals: true })
-      .populate({
-        path: "items.product",
-        select: "id name mainImage price",
-        populate: {
-          path: "mainImage",
-          select: "path"
-        }
-      });
-
-    return orders;
-  }
-
   async cancelOrder(id) {
-    console.log(id);
     const order = await this.orderModel.findById(new Types.ObjectId(id));
     if (!order) {
       throw new NotFoundException("Order not found");
@@ -132,7 +113,6 @@ export class OrdersService {
         order.status = EOrderStatus.PAYED;
         order.paymentUrl = "";
         await order.save();
-        console.log(order);
       }
 
       if (orderStatus === EPaymentStatuses.CANCELED) {

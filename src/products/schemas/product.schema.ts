@@ -45,6 +45,9 @@ export class Product {
     }
   })
   rating: IProductRatingObj;
+  
+  @Prop({default: 0})
+  averageRating: number
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }] })
   images: string[];
