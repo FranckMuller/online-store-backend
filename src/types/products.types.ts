@@ -1,11 +1,3 @@
-export interface IProductRatingObj {
-  1: number;
-  2: number;
-  3: number;
-  4: number;
-  5: number;
-}
-
 export type TSortProducts = {
   createdAt?: 1 | -1;
   price?: 1 | -1;

@@ -163,12 +163,12 @@ export class ProductsService {
     }
   }
 
-  async updateRating(reviewId, value, oldValue) {
+  async updateRating(productId, reviewId, value, oldValue) {
     let key = `rating.${value}`;
     let oldKey = `rating.${oldValue}`;
 
-    const product = await this.productModel.findOneAndUpdate(
-      { reviews: reviewId },
+    const product = await this.productModel.findByIdAndUpdate(
+      productId,
       {
         $inc: {
           [key]: 1,
@@ -178,14 +178,14 @@ export class ProductsService {
       { setter: false, new: true }
     );
 
-    product.averageRating = +product.rating;
+    product.averageRating = product.rating;
     await product.save();
   }
 
-  async removeReview(reviewId: string, ratingValue) {
+  async removeReview(productId: string, reviewId: string, ratingValue) {
     let key = `rating.${ratingValue}`;
-    const product = await this.productModel.findOneAndUpdate(
-      { reviews: reviewId },
+    const product = await this.productModel.findByIdAndUpdate(
+      productId,
       {
         $pull: {
           reviews: reviewId
@@ -197,7 +197,12 @@ export class ProductsService {
       { setter: false, new: true }
     );
 
-    product.averageRating = +product.rating;
+    if (product.rating) {
+      product.averageRating = product.rating;
+    } else {
+      product.averageRating = null;
+    }
+
     await product.save();
   }
 
@@ -221,7 +226,6 @@ export class ProductsService {
     }
 
     await user.save();
-    return;
   }
 
   private getCategoryByName(categoryName: string) {

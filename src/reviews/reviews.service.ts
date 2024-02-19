@@ -82,7 +82,7 @@ export class ReviewsService {
       throw new ForbiddenException("forbidden");
 
     if (dto.rating) {
-      await this.productsService.updateRating(id, dto.rating, review.rating);
+      await this.productsService.updateRating(review.product, id, dto.rating, review.rating);
       review.rating = dto.rating;
     }
 
@@ -103,7 +103,7 @@ export class ReviewsService {
       throw new ForbiddenException("forbidden");
     }
 
-    await this.productsService.removeReview(id, review.rating);
+    await this.productsService.removeReview(review.product, review.id, review.rating);
     const result = await this.reviewModel.findByIdAndDelete(id);
     return {
       id: review.id

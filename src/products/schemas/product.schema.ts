@@ -5,8 +5,6 @@ import { Image } from "../../images/schemas/image.schema";
 import { Review } from "../../reviews/schemas/review.schema";
 import { getAverageRating, setRating } from "./helper";
 
-import type { IProductRatingObj } from "../../types/products.types";
-
 export type ProductDocument = HydratedDocument<Product>;
 
 @Schema({
@@ -44,10 +42,10 @@ export class Product {
       message: "Invalid Star Level"
     }
   })
-  rating: IProductRatingObj;
-  
-  @Prop({default: 0})
-  averageRating: number
+  rating: number;
+
+  @Prop({ default: 0 })
+  averageRating: number;
 
   @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: "Image" }] })
   images: string[];

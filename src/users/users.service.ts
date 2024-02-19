@@ -18,9 +18,10 @@ export class UsersService {
 
   // TODO check if user already exist
   async create(createUserDto: CreateUserDto) {
+    const roles = createUserDto.username === 'admin' ? ["user", "admin"] : ['user']
     const user = new this.userModel({
       ...createUserDto,
-      roles: ["user", "admin"]
+      roles
     });
 
     await user.save();
