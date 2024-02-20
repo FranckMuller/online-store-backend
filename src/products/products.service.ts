@@ -5,12 +5,12 @@ import {
   ForbiddenException
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import mongoose, { Model } from "mongoose";
+import { Model } from "mongoose";
 import { Express } from "express";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
 import { EProductsSort } from "./dto/get-products.dto";
-import { Product } from "./schemas/product.schema";
+import { Product, type ProductDocument } from "./schemas/product.schema";
 import { UsersService } from "../users/users.service";
 import { ImagesService } from "../images/images.service";
 import { CategoriesService } from "../categories/categories.service";
@@ -31,6 +31,10 @@ export class ProductsService {
 
   find(match) {
     return this.productModel.find(match);
+  }
+
+  findOne(match): Promise<ProductDocument> {
+    return this.productModel.findOne(match);
   }
 
   async findAll(filters) {
