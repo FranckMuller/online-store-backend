@@ -15,9 +15,9 @@ import {
 import { ApiTags, ApiBearerAuth } from "@nestjs/swagger";
 import { OrdersService } from "./orders.service";
 import { UseUser } from "../decorators/use-user.decorator";
-import { CreateOrderDto } from "./dto/create-order.dto";
 import { AccessTokenGuard } from "../common/guards/access-token.guard";
 import { GetOrdersDto } from "./dto/get-orders.dto";
+import { PaymentConfirmDto } from "./dto/payment-confirm.dto";
 
 interface IAccessTokenPayload {
   userId: string;
@@ -38,19 +38,26 @@ export class OrdersController {
     return this.ordersService.getAll(queryParams, user.userId);
   }
 
-  @Post("confirm")
-  confirmOrder(@Body() dto) {
-    return this.ordersService.confirmOrder(dto);
+  @Post("payment-confirm")
+  confirmPayment(@Body() dto: PaymentConfirmDto) {
+    return this.ordersService.confirmPayment(dto);
+  }
+  
+  @Patch('shipment-confirm/:id')
+  confirmSipment(@Param('id') id: string){  
+    return this.ordersService.confirmShipment(id)
+  }
+  
+  @Patch('delivery-confirm/:id')
+  confirmDelivery(@Param('id') id: string){
+    return this.ordersService.confirmDelivery(id)
   }
 
   @UseGuards(AccessTokenGuard)
   @Post()
   @UsePipes(new ValidationPipe())
-  createOrder(
-    @Body() dto: CreateOrderDto,
-    @UseUser() user: IAccessTokenPayload
-  ) {
-    return this.ordersService.createOrder(dto, user.userId);
+  createOrder(@UseUser() user: IAccessTokenPayload) {
+    return this.ordersService.createOrder(user.userId);
   }
 
   // TODO check if user is owner order

@@ -20,8 +20,16 @@ export class CartService {
       })
       .populate({
         path: "items",
-        populate: { path: "product", populate: { path: "mainImage" } }
+        populate: {
+          path: "product",
+          select: "name price mainImage averageRating reviews description",
+          populate: [
+            { path: "mainImage" },
+            { path: "owner", select: "username" }
+          ]
+        }
       });
+
     return cart;
   }
 
@@ -46,7 +54,7 @@ export class CartService {
       const newCart = await this.cartModel.create({
         owner: new mongoose.Types.ObjectId(userId),
         items: items,
-        subTotal: product.price
+        subTotal: product.price * dto.quantity
       });
 
       item.cart = newCart._id;
@@ -58,19 +66,53 @@ export class CartService {
       });
 
       if (existedItem) {
+        cart.subTotal =
+          cart.subTotal -
+          existedItem.quantity * product.price +
+          dto.quantity * product.price;
         existedItem.quantity = dto.quantity;
         existedItem.total = dto.quantity * product.price;
         await existedItem.save();
+        await cart.save();
       } else {
         const item = await this.cartItemModel.create({
           product: product._id,
           quantity: dto.quantity,
           price: product.price,
-          total: product.price * dto.quantity
+          total: product.price * dto.quantity,
+          cart: cart._id
         });
         cart.items = [...cart.items, item._id];
+        cart.subTotal += product.price * dto.quantity;
         await cart.save();
       }
     }
+  }
+
+  // TODO check if user is owner item
+  async removeItem(itemId: string, userId) {
+    const cart = await this.cartModel.findOne({ owner: userId });
+    const result = await this.cartItemModel.findByIdAndDelete(itemId);
+    const cartResult = await this.cartModel.updateOne(
+      { owner: userId },
+      { $pullAll: { items: [{ _id: itemId }] } }
+    );
+    cart.subTotal -= result.total;
+
+    await cart.save();
+  }
+
+  async remove(userId: string) {
+    const cart = await this.cartModel.findOneAndDelete({
+      owner: new mongoose.Types.ObjectId(userId)
+    });
+  }
+
+  findOne($match) {
+    return this.cartModel.findOne($match);
+  }
+
+  findCartItems($match) {
+    return this.cartItemModel.find($match);
   }
 }

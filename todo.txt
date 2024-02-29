@@ -6,3 +6,4 @@
 6. handle schema errors
 7. create checking if user is owner product during update product
 8. make a checing if user exist by DB in guards
+9. check in access token guard if user exist

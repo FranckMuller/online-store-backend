@@ -57,11 +57,11 @@ UserSchema.virtual("id").get(function () {
   return this._id.toHexString();
 });
 
-UserSchema.set("toJSON", {
-  virtuals: true,
-  transform: (doc, ret, options) => {
-    delete ret.__v;
-    ret.id = ret._id.toString();
-    delete ret._id;
-  },
-});
+// UserSchema.set("toJSON", {
+//   virtuals: true,
+//   transform: (doc, ret, options) => {
+//     delete ret.__v;
+//     ret.id = ret._id.toString();
+//     delete ret._id;
+//   },
+// });

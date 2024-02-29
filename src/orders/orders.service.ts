@@ -9,11 +9,12 @@ import { Order, EOrderStatus } from "./schemas/order.schema";
 import { UsersService } from "../users/users.service";
 import { ProductsService } from "../products/products.service";
 import { PaymentService } from "../payment/payment.service";
+import { CartService } from "../cart/cart.service";
 import { Types } from "mongoose";
 
 enum EPaymentStatuses {
-  SUCCEEDED = "succeeded",
-  CANCELED = "canceled"
+  Succeeded = "succeeded",
+  Canceled = "canceled"
 }
 
 @Injectable()
@@ -22,14 +23,15 @@ export class OrdersService {
     @InjectModel(Order.name) private orderModel: Model<Order>,
     private usersService: UsersService,
     private productsService: ProductsService,
-    private paymentService: PaymentService
+    private paymentService: PaymentService,
+    private cartService: CartService
   ) {}
 
   async getAll(queryParams, userId) {
     const $match = { user: userId, ...queryParams };
-    console.log($match)
     const orders = await this.orderModel
       .find($match)
+      .sort("-createdAt")
       .select("id items amount status paymentUrl")
       .lean({ virtuals: true })
       .populate({
@@ -44,38 +46,28 @@ export class OrdersService {
     return orders;
   }
 
-  async createOrder(dto, userId) {
+  async createOrder(userId) {
     const user = await this.usersService.findById(userId);
     if (!user) new ForbiddenException("forbidden");
-
-    const productsIds = dto.items.map(i => i.product);
-    const products = await this.productsService.find({
-      _id: { $in: productsIds }
+    const cart = await this.cartService.findOne({ owner: user.id });
+    const items = await this.cartService.findCartItems({
+      _id: { $in: cart.items }
+    });
+    const orderItems = items.map(i => {
+      return {
+        product: i.product,
+        quantity: i.quantity,
+        total: i.total
+      };
     });
 
-    let amount = 0;
-    const items = [];
-    for (let i = 0; i < products.length; i++) {
-      for (let j = 0; j < dto.items.length; j++) {
-        if (products[i].id === dto.items[j].product) {
-          items.push({
-            product: products[i].id,
-            quantity: dto.items[j].quantity
-          });
-          amount += products[i].price * dto.items[j].quantity;
-          break;
-        }
-      }
-    }
-
-    const data = {
+    const orderData = {
       user: user.id,
-      items,
-      amount
+      items: orderItems,
+      amount: cart.subTotal
     };
 
-    const order = await this.orderModel.create(data);
-
+    const order = await this.orderModel.create(orderData);
     const payment = await this.paymentService.makePayment({
       amount: order.amount,
       orderId: order.id
@@ -98,29 +90,51 @@ export class OrdersService {
       throw new NotFoundException("Order not found");
     }
 
-    order.status = EOrderStatus.CANCELED;
+    order.status = EOrderStatus.Canceled;
     order.paymentUrl = null;
     await order.save();
     return;
   }
 
-  async confirmOrder(dto) {
+  async confirmPayment(dto) {
     const orderId = dto.object.description;
     const orderStatus = dto.object.status;
-    const order = await this.orderModel.findById(new Types.ObjectId(orderId));
+    const order = await this.orderModel.findById(orderId);
     if (order) {
-      if (orderStatus === EPaymentStatuses.SUCCEEDED) {
-        order.status = EOrderStatus.PAYED;
+      if (orderStatus === EPaymentStatuses.Succeeded) {
+        order.status = EOrderStatus.Payed;
         order.paymentUrl = "";
         await order.save();
       }
 
-      if (orderStatus === EPaymentStatuses.CANCELED) {
-        order.status = EOrderStatus.CANCELED;
-        await order.save();
+      if (orderStatus === EPaymentStatuses.Canceled) {
+        order.status = EOrderStatus.Canceled;
         order.paymentUrl = "";
+        await order.save();
       }
     }
+  }
+
+  async confirmShipment(orderId: string) {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) throw new NotFoundException("order not found");
+
+    if (order.status !== EOrderStatus.Payed)
+      throw new ForbiddenException("order is not payed");
+
+    order.status = EOrderStatus.Shipped;
+    await order.save();
+  }
+  
+  async confirmDelivery(orderId: string) {
+    const order = await this.orderModel.findById(orderId);
+    if (!order) throw new NotFoundException("order not found");
+
+    if (order.status !== EOrderStatus.Shipped)
+      throw new ForbiddenException("order was not shipped");
+
+    order.status = EOrderStatus.Delivered;
+    await order.save();
   }
 
   async deleteOrder(id) {

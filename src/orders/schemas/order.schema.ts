@@ -5,11 +5,11 @@ import { Product } from "../../products/schemas/product.schema";
 export type OrderDocument = HydratedDocument<Order>;
 
 export enum EOrderStatus {
-  PENDING = "pending",
-  PAYED = "payed",
-  SHIPPED = "shippped",
-  DELIVERED = "delivered",
-  CANCELED = "canceled"
+  Pending = "pending",
+  Payed = "payed",
+  Shipped = "shipped",
+  Delivered = "delivered",
+  Canceled = "canceled"
 }
 
 @Schema({
@@ -19,18 +19,19 @@ export class Order {
   @Prop({ rquired: true })
   amount: number;
 
-  @Prop({ required: true, default: EOrderStatus.PENDING })
+  @Prop({ required: true, default: EOrderStatus.Pending })
   status: EOrderStatus;
 
   @Prop({
     type: [
       {
         quantity: { type: Number },
+        total: { type: Number },
         product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }
       }
     ]
   })
-  items: { quantity: number; product: string }[];
+  items: { quantity: number; product: string; total: number }[];
 
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "User" })
   user: string;

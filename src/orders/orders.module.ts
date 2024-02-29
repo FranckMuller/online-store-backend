@@ -6,6 +6,7 @@ import { Order, OrderSchema } from "./schemas/order.schema";
 import { UsersModule } from "../users/users.module";
 import { ProductsModule } from "../products/products.module";
 import { PaymentModule } from "../payment/payment.module";
+import {CartModule} from '../cart/cart.module'
 import mongooseLeanVirtuals from "mongoose-lean-virtuals";
 
   @Module({
@@ -23,7 +24,8 @@ import mongooseLeanVirtuals from "mongoose-lean-virtuals";
       ]),
       UsersModule,
       ProductsModule,
-      PaymentModule
+      PaymentModule,
+      CartModule
     ],
     controllers: [OrdersController],
     providers: [OrdersService]
